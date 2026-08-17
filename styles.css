@@ -640,6 +640,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .bot-sus:active .bs-n, .bot-sus:active .bs-lbl, .bot-sus:active .bs-mas { color: var(--negro); }
 .bs-ic { font-size: 22px; line-height: 1; }
+
+/* Dibujos del cubata y el porro. Van de máscara y no de <img> para que tomen
+   el color del texto: en la diapositiva del wrapped el fondo es claro y un
+   icono blanco fijo no se veía. Miden 1em, así siguen al contexto. */
+.ic-sus {
+  display: inline-block; width: 1em; height: 1em;
+  vertical-align: -.13em;
+  background: currentColor;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center;  mask-position: center;
+  -webkit-mask-size: contain;     mask-size: contain;
+}
+.ic-cubata { -webkit-mask-image: url('ic-cubata.png'); mask-image: url('ic-cubata.png'); }
+.ic-porro  { -webkit-mask-image: url('ic-porro.png');  mask-image: url('ic-porro.png'); }
 .bs-n {
   font-family: var(--display); font-weight: 400; font-size: 46px;
   line-height: .9; letter-spacing: -.06em; color: var(--paper);

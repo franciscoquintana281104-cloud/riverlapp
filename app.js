@@ -878,9 +878,10 @@ window.salirSim = function () { estado.sim = null; pintarAhora(); pintarPlan(); 
    EL DAÑO — registro de consumo
    =========================================================== */
 
+/* Los dos fijos llevan dibujo propio (clase); las que añada Fran, un emoji. */
 const TIPOS_FIJOS = {
-  cubata: { nombre: 'CUBATAS', sing: 'cubata', icono: '🥤', hue: 190 },
-  porro:  { nombre: 'PORROS',  sing: 'porro',  icono: '🌿', hue: 140 },
+  cubata: { nombre: 'CUBATAS', sing: 'cubata', icono: '🥤', clase: 'ic-cubata', hue: 190 },
+  porro:  { nombre: 'PORROS',  sing: 'porro',  icono: '🌿', clase: 'ic-porro',  hue: 140 },
 };
 
 const SUGERENCIAS = ['MDMA', 'Speed', 'Keta', 'Tussi', 'Coca', 'Birra', 'Chupito'];
@@ -888,6 +889,13 @@ const SUGERENCIAS = ['MDMA', 'Speed', 'Keta', 'Tussi', 'Coca', 'Birra', 'Chupito
 function infoTipo(t) {
   if (TIPOS_FIJOS[t]) return TIPOS_FIJOS[t];
   return { nombre: t.toUpperCase(), sing: t.toLowerCase(), icono: '✦', hue: HUES[hash(t) % HUES.length] };
+}
+
+/* El dibujo va como máscara CSS, no como <img>: así toma el color del texto
+   que lo rodea. En blanco fijo desaparecía en la diapositiva del wrapped,
+   que va sobre fondo claro. La ruta del PNG vive en la hoja de estilos. */
+function htmlIcono(info) {
+  return info.clase ? `<span class="ic-sus ${info.clase}"></span>` : info.icono;
 }
 
 /* A qué actuación pertenece un momento dado. */
@@ -931,7 +939,7 @@ function destello(info, s) {
   const enFest = t >= FEST_DESDE() && t <= FEST_HASTA();
   const d = document.createElement('div');
   d.className = 'destello';
-  d.innerHTML = `<div class="ic">${info.icono}</div>
+  d.innerHTML = `<div class="ic">${htmlIcono(info)}</div>
     <div class="tx">+1 ${info.sing}</div>
     ${s ? `<div class="qn">con ${s.name}</div>`
       : enFest ? `<div class="qn">entre conciertos</div>`
@@ -1077,7 +1085,7 @@ function pintarContador() {
     const n = e.porTipo[tp] || 0;
     html += `
       <button class="bot-sus" style="--h:${info.hue}" onclick="apuntar('${tp.replace(/'/g, "\\'")}')">
-        <span class="bs-ic">${info.icono}</span>
+        <span class="bs-ic">${htmlIcono(info)}</span>
         <span class="bs-n">${n}</span>
         <span class="bs-lbl">${info.nombre}</span>
         <span class="bs-mas">+1</span>
@@ -1231,7 +1239,7 @@ function construirWrapped() {
     numero: e.total,
     grande: 'SUSTANCIAS',
     lista: Object.entries(e.porTipo).sort((a, b) => b[1] - a[1])
-      .map(([t, n]) => `${infoTipo(t).icono} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
+      .map(([t, n]) => `${htmlIcono(infoTipo(t))} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
   });
 
   if (e.cada) {
@@ -1253,7 +1261,7 @@ function construirWrapped() {
       grande: x.set.name,
       numero: x.n,
       pie: `${x.n} sustancias en ${x.set.mins} minutos · ${x.set.stageName} · ${x.set.dayLabel}`,
-      lista: Object.entries(x.tipos).map(([t, n]) => `${infoTipo(t).icono} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
+      lista: Object.entries(x.tipos).map(([t, n]) => `${htmlIcono(infoTipo(t))} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
       set: x.set,
     });
   }

@@ -72,6 +72,9 @@ de colores ni degradados: el plan se lee como una página.
     bajar-fotos.py      vuelve a bajar las fotos desde Deezer
     icono-origen.webp   la R inflada, de donde salen los iconos
     hacer-iconos.py     regenera los iconos desde icono-origen.webp
+    ic-cubata.png       dibujos del cubata y el porro en EL DAÑO; van de
+    ic-porro.png          máscara CSS, así que toman el color del texto
+    hacer-iconos-sustancias.py  los regenera desde ic-*-origen.*
     cabeza.png          la cara del icono de EL DAÑO
     hacer-cabeza.py     recorta una cara sobre fondo blanco y genera cabeza.png
 
