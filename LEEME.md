@@ -28,7 +28,7 @@ atrás; durante, es el copiloto.
 El **cartel completo** está dentro de MI PLAN, en la pestaña de al lado. Cada
 línea rota entre ♥ / ★ / ✕ al tocarla, por si te arrepientes de un fichaje.
 
-**EL DAÑO** — el contador. Un botón por cosa (cubatas, porros, y las que añadas
+**EL DAÑO** — el contador. Un botón por sustancia (cubatas, porros, y las que añadas
 tú). Cada toque se guarda **con el artista que estuviera sonando en ese momento**,
 y de ahí salen todas las estadísticas: concierto más drogado, hora punta, la
 media hora más bestia, ranking de artistas por daño causado. Al final, el botón

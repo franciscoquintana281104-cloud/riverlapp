@@ -926,7 +926,7 @@ function pintarContador() {
 
     const dato = (k, v) => `<div class="dato"><div class="dk">${k}</div><div class="dv">${v}</div></div>`;
 
-    html += dato('Total apuntado', `${e.total} cosa${e.total === 1 ? '' : 's'}`);
+    html += dato('Total de sustancias', `${e.total}`);
     if (e.cada) html += dato('Ritmo medio', `una cada ${fmtDur(e.cada)}`);
     if (e.masDrogado) html += dato('Concierto más drogado', `${e.masDrogado.set.name} · ${e.masDrogado.n}`);
     if (e.horaPunta) html += dato('Hora punta', `${String(e.horaPunta[0]).padStart(2, '0')}:00 · ${e.horaPunta[1]}`);
@@ -1045,7 +1045,7 @@ function construirWrapped() {
     tono: 'total',
     sup: 'EN TOTAL TE HAS METIDO',
     numero: e.total,
-    grande: 'COSAS',
+    grande: 'SUSTANCIAS',
     lista: Object.entries(e.porTipo).sort((a, b) => b[1] - a[1])
       .map(([t, n]) => `${infoTipo(t).icono} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
   });
@@ -1053,7 +1053,7 @@ function construirWrapped() {
   if (e.cada) {
     s.push({
       tono: 'ritmo',
-      sup: 'ESO ES UNA COSA CADA',
+      sup: 'ESO ES UNA SUSTANCIA CADA',
       grande: fmtDur(e.cada).toUpperCase(),
       pie: e.cada < 1800000
         ? 'Un ritmo difícil de sostener. Enhorabuena, supongo.'
@@ -1068,7 +1068,7 @@ function construirWrapped() {
       sup: 'TU CONCIERTO MÁS DROGADO',
       grande: x.set.name,
       numero: x.n,
-      pie: `${x.n} cosas en ${x.set.mins} minutos · ${x.set.stageName} · ${x.set.dayLabel}`,
+      pie: `${x.n} sustancias en ${x.set.mins} minutos · ${x.set.stageName} · ${x.set.dayLabel}`,
       lista: Object.entries(x.tipos).map(([t, n]) => `${infoTipo(t).icono} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
       set: x.set,
     });
@@ -1092,7 +1092,7 @@ function construirWrapped() {
       sup: 'TU PEOR NOCHE',
       grande: d ? d.name : e.diaTop[0],
       numero: e.diaTop[1],
-      pie: `${e.diaTop[1]} cosas en una sola noche`,
+      pie: `${e.diaTop[1]} sustancias en una sola noche`,
       lista: dias.map(x => `${x.short} · ${e.porDia[x.id] || 0}`),
     });
   }
@@ -1102,7 +1102,7 @@ function construirWrapped() {
       tono: 'hora',
       sup: 'TU HORA PUNTA',
       grande: `${String(e.horaPunta[0]).padStart(2, '0')}:00`,
-      pie: `${e.horaPunta[1]} cosas en esa franja. Todos sabemos lo que pasó ahí.`,
+      pie: `${e.horaPunta[1]} sustancias en esa franja. Todos sabemos lo que pasó ahí.`,
     });
   }
 
@@ -1138,7 +1138,7 @@ function construirWrapped() {
     tono: 'final',
     sup: 'VEREDICTO',
     grande: veredicto(e),
-    pie: `${e.total} apuntes · ${e.sets.length} conciertos afectados · Riverland 2026`,
+    pie: `${e.total} sustancias · ${e.sets.length} conciertos afectados · Riverland 2026`,
   });
 
   return s;

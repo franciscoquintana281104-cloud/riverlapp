@@ -17,14 +17,25 @@ echo "  RIVERLAPP → actualizar"
 echo "  ──────────────────────"
 echo ""
 
-if [ -z "$(git status --porcelain)" ]; then
-  echo "  No hay ningún cambio que subir."
+# Hay algo que entregar si el árbol está sucio O si hay commits sin subir.
+# (Mirar solo el árbol dejaba colgados los commits ya hechos pero sin push.)
+SUCIO="$(git status --porcelain)"
+git fetch -q origin 2>/dev/null || true
+PENDIENTES=$(git rev-list --count origin/main..HEAD 2>/dev/null || echo 0)
+
+if [ -z "$SUCIO" ] && [ "$PENDIENTES" -eq 0 ]; then
+  echo "  Todo está ya publicado. No hay nada que subir."
   echo ""
   exit 0
 fi
 
-echo "  Cambios detectados:"
-git status --short | sed 's/^/    /'
+if [ -n "$SUCIO" ]; then
+  echo "  Cambios sin guardar:"
+  git status --short | sed 's/^/    /'
+fi
+if [ "$PENDIENTES" -gt 0 ]; then
+  echo "  Commits hechos pero sin subir: $PENDIENTES"
+fi
 echo ""
 
 # ── Subir la versión de la caché ───────────────────────────────────────
@@ -36,8 +47,12 @@ echo "  · Versión de caché: $VIEJA → $NUEVA"
 
 # ── Commit y push ──────────────────────────────────────────────────────
 git add -A
-git commit -q -m "$MENSAJE"
-echo "  · Commit hecho"
+if git diff --cached --quiet; then
+  echo "  · Nada nuevo que commitear, solo queda subir lo pendiente"
+else
+  git commit -q -m "$MENSAJE"
+  echo "  · Commit hecho"
+fi
 
 echo "  · Subiendo..."
 git push -q origin main
