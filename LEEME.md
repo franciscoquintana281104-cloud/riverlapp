@@ -40,6 +40,14 @@ que puedas ensayar y ver el wrapped. En cuanto arranque el viernes, esos apuntes
 de ensayo dejan de contar solos y la app te ofrece borrarlos. Si quieres ensayar
 con conciertos de verdad, mueve el modo simulación desde ⚙.
 
+## Estética
+
+**TARJETA ROSA**: marco negro sobrio y el magenta reservado para lo que importa
+—la carta del artista, el bloque de "SAL YA", el día activo, lo sagrado—. Las
+fotos se imprimen a una tinta sobre el magenta, los nombres van en tipografía
+grande y ligera, y las etiquetas en monoespaciada muy espaciada. Nada de cajas
+de colores ni degradados: el plan se lee como una página.
+
 ## Ajustes (⚙)
 
 - **Tiempo entre escenarios**: por defecto 6 min. Es una estimación mía, no he

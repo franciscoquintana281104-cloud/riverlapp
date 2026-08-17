@@ -561,7 +561,7 @@ function pintarPlan() {
       html += `
         <div class="tl-item" style="${retardo}">
           <div class="tl-hora">${fmtHora(it.from)}</div>
-          <div class="tl-punto" style="--h:276;background:transparent;border:2px dashed var(--purple);box-shadow:none"></div>
+          <div class="tl-punto"></div>
           <div class="pausa">
             <div class="cab-p"><div class="tit">PAUSA</div><div class="dur">${fmtDur(it.to - it.from)}</div></div>
             <div class="msg">${mensajePausa(it.mins, it.from)}</div>
@@ -583,8 +583,8 @@ function pintarPlan() {
             ${s.sub ? `<div class="sb">${s.sub}</div>` : ''}
             <div class="bajo">
               <span class="chip esc" style="--h:${hue}">${s.stageName}</span>
-              ${it.justo ? `<span class="chip" style="color:var(--raya);border-color:rgba(255,59,87,.5)">⚡ VAS JUSTO</span>` : ''}
-              ${enCurso ? `<span class="chip" style="color:var(--magenta);border-color:var(--magenta)">● SONANDO</span>` : ''}
+              ${it.justo ? `<span class="chip aviso">⚡ VAS JUSTO</span>` : ''}
+              ${enCurso ? `<span class="chip sonando">● SONANDO</span>` : ''}
             </div>
           </div>
         </div>`;
@@ -635,11 +635,11 @@ function pintarAhora() {
 
     const n = Object.values(estado.prefs).filter(v => v >= 1).length;
     html += n
-      ? `<div class="sal-ya" style="animation:none;background:linear-gradient(120deg,rgba(34,227,154,.14),rgba(162,75,255,.12));border-color:rgba(34,227,154,.4)">
+      ? `<div class="sal-ya sereno">
            <div class="t">PLAN LISTO</div>
            <div class="d">Llevas <b>${n}</b> artistas fichados. Cuando abran puertas esta pantalla se convierte en tu copiloto.</div>
          </div>`
-      : `<div class="sal-ya" style="animation:none">
+      : `<div class="sal-ya sereno">
            <div class="t">TE FALTA FICHAR</div>
            <div class="d">Todavía no has dicho a quién quieres ver. Dale a <b>FICHAR</b> y desliza el cartel.</div>
          </div>`;
@@ -684,7 +684,7 @@ function pintarAhora() {
         <div class="ahora-meta">
           <span class="chip esc" style="--h:${hue}">${actual.stageName}</span>
           <span class="chip">${actual.start} – ${actual.end}</span>
-          ${estado.prefs[actual.id] === 2 ? `<span class="chip" style="color:var(--sisi);border-color:rgba(255,210,61,.5)">★ SÍ O SÍ</span>` : ''}
+          ${estado.prefs[actual.id] === 2 ? `<span class="chip sagrado">★ SÍ O SÍ</span>` : ''}
         </div>
       </div>`;
   } else {
@@ -698,7 +698,7 @@ function pintarAhora() {
             <div class="queda-lbl">SIN NADA TUYO</div>
           </div>
         </div>
-        <div class="ahora-nom" style="font-size:clamp(20px,6.5vw,30px);color:var(--purple)">${pausaMsg}</div>
+        <div class="ahora-nom pausa-msg">${pausaMsg}</div>
       </div>`;
   }
 
@@ -727,7 +727,7 @@ function pintarAhora() {
           <div class="bajo">
             <span class="chip esc" style="--h:${hue}">${siguiente.stageName}</span>
             <span class="chip">${siguiente.start}</span>
-            ${estado.prefs[siguiente.id] === 2 ? `<span class="chip" style="color:var(--sisi);border-color:rgba(255,210,61,.5)">★ SÍ O SÍ</span>` : ''}
+            ${estado.prefs[siguiente.id] === 2 ? `<span class="chip sagrado">★ SÍ O SÍ</span>` : ''}
           </div>
         </div>
       </div>`;
@@ -759,8 +759,8 @@ function pintarAhora() {
 function bloqueSimulacion() {
   if (!estado.sim) return '';
   return `
-    <div class="sal-ya" style="margin-top:26px;animation:none;background:rgba(53,232,255,.09);border-color:rgba(53,232,255,.4)">
-      <div class="t" style="color:var(--cyan)">🕹 MODO SIMULACIÓN</div>
+    <div class="sal-ya sereno aviso-sim">
+      <div class="t">🕹 MODO SIMULACIÓN</div>
       <div class="d">Estás viendo la app como si fueran las <b>${fmtHora(estado.sim)}</b> del ${new Date(estado.sim).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })}.
       <br><button class="btn-linea" style="margin-top:11px" onclick="salirSim()">VOLVER A LA HORA REAL</button></div>
     </div>`;
@@ -1303,7 +1303,7 @@ function pintarCartel() {
         <div class="linea ${p !== undefined ? 'p' + p : ''}" onclick="cicloPref('${s.id}')">
           <div class="h">${s.start}</div>
           <div class="n">${s.name}${s.sub ? `<span style="display:block;font-size:9px;opacity:.55;font-weight:400;letter-spacing:.1em;margin-top:3px">${s.sub}</span>` : ''}</div>
-          <div class="p" style="color:${p === 2 ? 'var(--sisi)' : p === 1 ? 'var(--renta)' : p === 0 ? 'var(--raya)' : 'var(--mute-2)'}">${ICONO_PREF[p] ?? '·'}</div>
+          <div class="p">${ICONO_PREF[p] ?? '·'}</div>
         </div>`;
     });
     html += `</div></div>`;
