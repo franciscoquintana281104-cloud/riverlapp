@@ -1,7 +1,7 @@
 /* RIVERLAPP — service worker.
    Cachea todo al instalar para que funcione sin cobertura en el recinto. */
 
-const CACHE = 'riverlapp-v2';
+const CACHE = 'riverlapp-v3';
 const BASE = [
   './',
   './index.html',
@@ -27,12 +27,26 @@ async function fotosDelCartel() {
   }
 }
 
+/* Una instalación a medias es peor que no actualizar: al activarse se borraría
+   la caché anterior y te quedarías sin app justo donde no hay cobertura.
+   Por eso, si algo esencial falla, la instalación falla y se conserva lo viejo. */
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
-    await Promise.allSettled(BASE.map(u => c.add(u)));
+
+    // el núcleo de la app es obligatorio: si cae uno, se aborta
+    await Promise.all(BASE.map(u => c.add(u)));
+
+    // las fotos son prescindibles de una en una, pero no a montones
     const fotos = await fotosDelCartel();
-    await Promise.allSettled(fotos.map(u => c.add(u)));
+    const res = await Promise.allSettled(fotos.map(u => c.add(u)));
+    const fallos = res.filter(r => r.status === 'rejected').length;
+    if (fotos.length && fallos > fotos.length * 0.15) {
+      throw new Error(
+        `${fallos}/${fotos.length} fotos sin cachear: se conserva la versión anterior`
+      );
+    }
+
     await self.skipWaiting();
   })());
 });
