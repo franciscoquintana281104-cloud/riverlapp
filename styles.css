@@ -417,10 +417,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   content: ''; position: absolute; inset: 4px; border-radius: 50%;
   background: var(--ink);
 }
-.anillo .centro { position: relative; text-align: center; padding: 0 22px; }
+/* el punto que da la vuelta cada minuto: es lo que hace ver que corre */
+.anillo .segundero {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  transform: rotate(var(--seg, 0deg));
+  transition: transform 1s linear;
+}
+.anillo .segundero::before {
+  content: ''; position: absolute; top: -4px; left: 50%; margin-left: -5px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 10px rgba(242,240,238,.5);
+}
+
+.anillo .centro { position: relative; z-index: 4; text-align: center; padding: 0 22px; }
 .anillo .queda {
-  font-family: var(--display); font-weight: 400; font-size: 58px;
-  line-height: 1; letter-spacing: -.06em;
+  font-family: var(--display); font-weight: 400; font-size: 46px;
+  line-height: 1; letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;   /* sin esto el reloj baila al cambiar */
 }
 .anillo .queda small { font-size: 15px; opacity: .45; letter-spacing: 0; }
 .anillo .queda-lbl { font-family: var(--mono); font-size: 8.5px; letter-spacing: .24em; color: var(--mute-2); margin-top: 9px; }

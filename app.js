@@ -190,10 +190,17 @@ function fmtCuenta(ms) {
   const m = Math.floor(tot / 60) % 60;
   const sg = tot % 60;
   const dos = n => String(n).padStart(2, '0');
-  if (d > 0) return { grande: `${d}<small>d</small>`, pie: `${dos(h)}:${dos(m)}:${dos(sg)}` };
+  // el número grande siempre lleva segundos: si no, parece que está parado
+  if (d > 0) return { grande: `${dos(h)}:${dos(m)}:${dos(sg)}`, pie: `Y ${d} DÍA${d === 1 ? '' : 'S'} MÁS` };
   if (h > 0) return { grande: `${h}:${dos(m)}:${dos(sg)}`, pie: 'RESTANTE' };
   return { grande: `${dos(m)}:${dos(sg)}`, pie: 'RESTANTE' };
 }
+
+/* Segundero: un punto que da la vuelta cada minuto. El arco de progreso de un
+   concierto avanza 0,12° por segundo —invisible—, así que sin esto la pantalla
+   parece congelada aunque el reloj corra. El ángulo crece sin dar la vuelta
+   atrás para que nunca gire al revés. */
+const gradosSegundero = t => Math.floor(t / 1000) * 6;
 
 function fmtHora(ts) {
   const d = new Date(ts);
@@ -635,6 +642,7 @@ function pintarAhora() {
       <div class="ahora-hero" style="text-align:center">
         <div class="eyebrow">RIVERLAND ABRE EN</div>
         <div class="anillo" id="anillo" style="--deg:360deg">
+          <i class="segundero" id="segundero" style="--seg:${gradosSegundero(t)}deg"></i>
           <div class="centro">
             <div class="queda" id="cd-grande">${c.grande}</div>
             <div class="queda-lbl" id="cd-pie">${c.pie}</div>
@@ -687,6 +695,7 @@ function pintarAhora() {
       <div class="ahora-hero">
         <div class="eyebrow" style="text-align:center">AHORA ESTÁS VIENDO</div>
         <div class="anillo" id="anillo" style="--deg:${(prog * 360).toFixed(1)}deg">
+          <i class="segundero" id="segundero" style="--seg:${gradosSegundero(t)}deg"></i>
           <div class="centro">
             <div class="queda" id="cd-grande">${c.grande}</div>
             <div class="queda-lbl" id="cd-pie">${c.pie}</div>
@@ -811,6 +820,9 @@ function latido() {
     if (pie && pie.textContent !== c.pie) pie.textContent = c.pie;
     if (anillo) anillo.style.setProperty('--deg', (prog * 360).toFixed(2) + 'deg');
   }
+
+  const seg = $('#segundero');
+  if (seg) seg.style.setProperty('--seg', gradosSegundero(t) + 'deg');
 
   const sig = plan.find(s => s.from > t);
   const prox = $('#cd-prox');
