@@ -1,3 +1,6 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# hojas de revisión: se regeneran con revisar-fotos.py
+revision-fotos-*.jpg
