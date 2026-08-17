@@ -143,8 +143,16 @@ Playboy). **No "corregirlas".**
 
 ## Cosas del entorno
 
-- El icono de EL DAÑO es una cara recortada (`cabeza.png`), y esa misma cabeza
-  deriva por la pantalla **por detrás** del contenido: encima tapaba los números.
+- El icono de EL DAÑO es una cara recortada (`cabeza.png`). Esa misma cabeza es
+  el **botón de eructar**, y va en la **cabecera**, no flotando sobre el scroll:
+  como botón se queda los toques de lo que tenga debajo, y en una esquina pisaba
+  VER MI WRAPPED, BORRAR EL REGISTRO y la tarjeta de OTRA SUSTANCIA según por
+  dónde fueras. Antes de ser botón derivaba por la pantalla por detrás del
+  contenido, porque encima tapaba los números.
+- Los eructos van en **AAC mono** (`hacer-eructos.py` los saca de los WAV): en
+  WAV eran 2 MB que había que precachear enteros para el modo sin cobertura.
+  Se les recorta el silencio de los extremos, que retrasaba el sonido respecto
+  al toque, y se igualan de volumen porque uno venía 10 dB por debajo.
 - Los 6 minutos entre escenarios son una **estimación sin medir el recinto**.
   Ajustable desde ⚙ y recalcula el plan.
 - El cartel entero está en `data.js`. Los sets que empiezan antes de las 12:00

@@ -1625,6 +1625,52 @@ function activarCara() {
   img.src = 'cabeza.png';
 }
 
+/* ===========================================================
+   LA CABEZA ERUCTA
+   =========================================================== */
+
+const N_ERUCTOS = 5;          // audio/eructo-1.m4a … eructo-5.m4a
+const eructos = [];
+let ultimoEructo = -1;
+
+/* Un Audio por pista, creados una sola vez: rehacerlos en cada toque metía
+   un parón en el móvil mientras volvía a abrir el fichero. */
+function prepararEructos() {
+  for (let i = 1; i <= N_ERUCTOS; i++) {
+    const a = new Audio(`audio/eructo-${i}.m4a`);
+    a.preload = 'auto';
+    eructos.push(a);
+  }
+}
+
+/* Al azar pero nunca el mismo dos veces seguidas: repetido pierde la gracia. */
+function siguienteEructo() {
+  if (ultimoEructo < 0 || N_ERUCTOS < 2) return Math.floor(Math.random() * N_ERUCTOS);
+  const n = Math.floor(Math.random() * (N_ERUCTOS - 1));
+  return n >= ultimoEructo ? n + 1 : n;
+}
+
+function eructar() {
+  const btn = $('#cabeza-boton');
+  if (btn) {
+    btn.classList.remove('eructando');
+    void btn.offsetWidth;               // reinicia la animación si ya estaba
+    btn.classList.add('eructando');
+  }
+
+  // si venías de dar otro toque, se corta: dos eructos a la vez suenan a ruido
+  eructos.forEach(a => { if (!a.paused) { a.pause(); a.currentTime = 0; } });
+
+  const n = siguienteEructo();
+  ultimoEructo = n;
+  const a = eructos[n];
+  if (!a) return;
+  a.currentTime = 0;
+  // en iOS puede rechazarlo (silencio, batería baja): no es motivo de error
+  const p = a.play();
+  if (p) p.catch(() => {});
+}
+
 function animarLogo() {
   const cont = $('#logo-anim');
   const txt = 'RIVERLAPP';
@@ -1636,6 +1682,7 @@ function iniciar() {
   cargar();
   animarLogo();
   activarCara();
+  prepararEructos();
   reconstruirBaraja();
 
   // día por defecto: el que toque si estamos en festival
@@ -1653,6 +1700,10 @@ function iniciar() {
   $('#btn-si').onclick     = () => decidir(1);
   $('#btn-top').onclick    = () => decidir(2);
   $('#btn-rewind').onclick = rewind;
+  $('#cabeza-boton').onclick = eructar;
+  $('#cabeza-boton').addEventListener('animationend', e => {
+    if (e.animationName === 'eructa') e.target.classList.remove('eructando');
+  });
   $$('.btn-ajustes').forEach(b => b.onclick = abrirAjustes);
   $('#hoja').onclick = e => { if (e.target.id === 'hoja') cerrarHoja(); };
   $('#hoja-sus').onclick = e => { if (e.target.id === 'hoja-sus') e.currentTarget.classList.remove('on'); };

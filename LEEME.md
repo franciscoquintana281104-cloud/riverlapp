@@ -38,6 +38,10 @@ media hora más bestia, ranking de artistas por daño causado. Al final, el bot�
 **VER MI WRAPPED** monta un resumen a pantalla completa estilo Spotify Wrapped,
 que se pasa tocando.
 
+La **cabeza** de la esquina de arriba es un botón: cada toque suelta uno de los
+cinco eructos, nunca el mismo dos veces seguidas. Ojo, en el iPhone el
+interruptor de silencio los calla.
+
 **Modo prueba**: antes de que empiece el festival todo suma con normalidad, para
 que puedas ensayar y ver el wrapped. En cuanto arranque el viernes, esos apuntes
 de ensayo dejan de contar solos y la app te ofrece borrarlos. Si quieres ensayar
@@ -75,6 +79,9 @@ de colores ni degradados: el plan se lee como una página.
     ic-cubata.png       dibujos del cubata y el porro en EL DAÑO; van de
     ic-porro.png          máscara CSS, así que toman el color del texto
     hacer-iconos-sustancias.py  los regenera desde ic-*-origen.*
+    audio/              los cinco eructos de la cabeza (AAC)
+    audio/origen/       sus WAV originales, solo para regenerarlos
+    hacer-eructos.py    convierte los WAV a AAC, los recorta e iguala
     cabeza.png          la cara del icono de EL DAÑO
     hacer-cabeza.py     recorta una cara sobre fondo blanco y genera cabeza.png
 

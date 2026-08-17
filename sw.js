@@ -1,7 +1,7 @@
 /* RIVERLAPP — service worker.
    Cachea todo al instalar para que funcione sin cobertura en el recinto. */
 
-const CACHE = 'riverlapp-v20';
+const CACHE = 'riverlapp-v21';
 const BASE = [
   './',
   './index.html',
@@ -17,6 +17,11 @@ const BASE = [
   './cabeza.png',
   './ic-cubata.png',
   './ic-porro.png',
+  './audio/eructo-1.m4a',
+  './audio/eructo-2.m4a',
+  './audio/eructo-3.m4a',
+  './audio/eructo-4.m4a',
+  './audio/eructo-5.m4a',
 ];
 
 /* Las fotos también se precachean: en el recinto no hay red para pedirlas,
