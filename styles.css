@@ -941,6 +941,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .btn-linea:active { transform: scale(.97); }
 .btn-linea.peligro { color: var(--raya); border-color: rgba(255,59,87,.4); }
 
+.version {
+  margin-top: 20px; text-align: center;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+  color: var(--mute-2); line-height: 1.7;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

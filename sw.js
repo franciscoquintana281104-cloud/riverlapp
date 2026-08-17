@@ -1,7 +1,7 @@
 /* RIVERLAPP — service worker.
    Cachea todo al instalar para que funcione sin cobertura en el recinto. */
 
-const CACHE = 'riverlapp-v4';
+const CACHE = 'riverlapp-v5';
 const BASE = [
   './',
   './index.html',
@@ -59,18 +59,25 @@ self.addEventListener('activate', e => {
   );
 });
 
-/* Sirve al instante desde caché y refresca por detrás.
-   En el recinto (sin red) responde la caché; en casa se actualiza sola. */
+/* Solo caché, sin refrescar por detrás.
+   Refrescar fichero a fichero podía dejar la caché con una mezcla de versiones
+   (index.html nuevo con app.js viejo, por ejemplo, que rompe la app). La única
+   forma de cambiar de versión es instalar un CACHE nuevo, que se llena entero
+   o no se activa: así lo que hay dentro siempre es coherente. */
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.open(CACHE).then(async cache => {
-      const hit = await cache.match(e.request);
-      const red = fetch(e.request).then(res => {
-        if (res && res.ok && res.type === 'basic') cache.put(e.request, res.clone());
-        return res;
-      }).catch(() => null);
-      return hit || (await red) || cache.match('./index.html');
-    })
-  );
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const hit = await cache.match(e.request);
+    if (hit) return hit;
+
+    // algo que no estaba precacheado (una foto añadida a mano, por ejemplo)
+    try {
+      const res = await fetch(e.request);
+      if (res && res.ok && res.type === 'basic') cache.put(e.request, res.clone());
+      return res;
+    } catch (_) {
+      return (await cache.match('./index.html')) || Response.error();
+    }
+  })());
 });

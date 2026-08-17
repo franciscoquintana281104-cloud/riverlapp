@@ -1302,7 +1302,10 @@ function abrirAjustes() {
     </div>
 
     <button class="btn-linea peligro" onclick="if(confirm('¿Borrar todas tus elecciones?')){reiniciarBaraja();cerrarHoja()}">BORRAR TODO Y EMPEZAR DE CERO</button>
+
+    <div class="version" id="version-app">comprobando versión…</div>
   `;
+  mostrarVersion();
   h.classList.add('on');
 
   $('#in-andar').oninput = e => {
@@ -1322,6 +1325,23 @@ function abrirAjustes() {
   };
 }
 window.cerrarHoja = () => $('#hoja').classList.remove('on');
+
+/* Qué versión tiene realmente este móvil. Si un día la app se ve rara,
+   aquí se ve enseguida si se quedó con una versión vieja. */
+async function mostrarVersion() {
+  const el = $('#version-app');
+  if (!el) return;
+  const partes = [`${SETS.length} sets · ${Object.keys(window.FOTOS || {}).length} fotos`];
+  try {
+    const ks = await caches.keys();
+    const mia = ks.find(k => k.startsWith('riverlapp-'));
+    partes.push(mia ? `caché ${mia}` : 'sin caché (no funcionará sin cobertura)');
+    if (ks.length > 1) partes.push('⚠ hay más de una caché');
+  } catch (_) {
+    partes.push('sin service worker');
+  }
+  el.textContent = partes.join(' · ');
+}
 
 /* ===========================================================
    ARRANQUE
