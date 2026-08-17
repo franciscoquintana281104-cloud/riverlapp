@@ -749,8 +749,9 @@ function destello(info, s) {
   d.className = 'destello';
   d.innerHTML = `<div class="ic">${info.icono}</div>
     <div class="tx">+1 ${info.sing}</div>
-    ${!enFest ? `<div class="qn">prueba · no cuenta</div>`
-      : s ? `<div class="qn">con ${s.name}</div>` : `<div class="qn">entre conciertos</div>`}`;
+    ${s ? `<div class="qn">con ${s.name}</div>`
+      : enFest ? `<div class="qn">entre conciertos</div>`
+      : `<div class="qn">ensayo</div>`}`;
   document.body.appendChild(d);
   setTimeout(() => d.remove(), 1400);
 }
@@ -760,12 +761,16 @@ function destello(info, s) {
 const FEST_DESDE = () => SETS[0].from - 3600000;
 const FEST_HASTA = () => SETS[SETS.length - 1].to;
 
+/* Antes de que empiece el festival todo cuenta: si no, pulsas los botones para
+   probar y el número no se mueve, que parece que la app está rota. Una vez
+   arrancado, los apuntes de antes pasan a ser pruebas y dejan de contar. */
+const enPruebas = () => ahora() < FEST_DESDE();
+
 function estadisticas() {
-  /* Solo cuentan los apuntes dentro de las fechas del festival. Los de fuera son
-     pruebas, y si se colaran descuadrarían el total con el desglose por día. */
   const todos = [...estado.registro].sort((a, b) => a.ts - b.ts);
-  const reg = todos.filter(r => r.ts >= FEST_DESDE() && r.ts <= FEST_HASTA());
-  const fuera = todos.length - reg.length;
+  const pruebas = enPruebas();
+  const reg = pruebas ? todos : todos.filter(r => r.ts >= FEST_DESDE() && r.ts <= FEST_HASTA());
+  const fuera = pruebas ? 0 : todos.length - reg.length;
   const total = reg.length;
 
   const porTipo = {};
@@ -836,7 +841,7 @@ function estadisticas() {
   });
 
   return {
-    reg, total, fuera, porTipo, porDia, entradasDia, porSet, sets, enConciertos,
+    reg, total, fuera, pruebas, porTipo, porDia, entradasDia, porSet, sets, enConciertos,
     masDrogado, masIntenso, horaPunta, ventana, racha: racha2, diaTop, cada, msActivo,
     ranking: sets.slice().sort((a, b) => b.n - a.n).slice(0, 5),
   };
@@ -860,10 +865,25 @@ function pintarContador() {
 
   const tipos = [...Object.keys(TIPOS_FIJOS), ...estado.otras];
 
-  let html = `
+  let html = '';
+
+  if (e.pruebas) {
+    html += `
+      <div class="aviso-prueba">
+        <div class="t">🕹 Modo prueba</div>
+        <div class="d">El festival aún no ha empezado, así que esto es un ensayo:
+        los botones suman y puedes ver el wrapped, pero <b>el viernes estos apuntes
+        dejarán de contar solos</b>.<br><br>
+        Para probarlo con conciertos de verdad, entra en ⚙ y mueve el
+        <b>modo simulación</b> a una hora del festival.</div>
+        ${e.total ? `<button class="btn-linea" onclick="borrarRegistro()">BORRAR EL ENSAYO</button>` : ''}
+      </div>`;
+  }
+
+  html += `
     <div class="ahora-mide">
       <div class="eyebrow">${sonando ? 'APUNTANDO MIENTRAS SUENA' : 'AHORA MISMO'}</div>
-      <div class="mide-quien">${sonando ? sonando.name : 'Entre conciertos'}</div>
+      <div class="mide-quien">${sonando ? sonando.name : (e.pruebas ? 'Todavía no hay festival' : 'Entre conciertos')}</div>
     </div>
 
     <div class="botonera">`;
