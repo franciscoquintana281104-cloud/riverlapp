@@ -63,7 +63,14 @@
       <button class="dia-btn" data-dia="sab">SÁB 22</button>
       <button class="dia-btn" data-dia="dom">DOM 23</button>
     </div>
-    <div class="scroll"><div class="tl" id="plan-lista"></div></div>
+    <div class="conmutador">
+      <button class="con-btn on" data-modo="plan">MI PLAN</button>
+      <button class="con-btn" data-modo="cartel">CARTEL COMPLETO</button>
+    </div>
+    <div class="scroll">
+      <div class="tl" id="plan-lista"></div>
+      <div id="cartel-lista" hidden></div>
+    </div>
   </section>
 
   <!-- ===================== FICHAR ===================== -->
@@ -106,21 +113,16 @@
     </div>
   </section>
 
-  <!-- ===================== CARTEL ===================== -->
-  <section class="vista" id="v-cartel">
+  <!-- ===================== CONTADOR ===================== -->
+  <section class="vista" id="v-contador">
     <header class="cab">
       <div>
-        <h1>CARTEL</h1>
-        <div class="sub">83 ARTISTAS · 3 ESCENARIOS</div>
+        <h1>EL DAÑO</h1>
+        <div class="sub" id="contador-sub">LLEVANDO LA CUENTA</div>
       </div>
       <button class="icon-btn btn-ajustes">⚙</button>
     </header>
-    <div class="dias">
-      <button class="dia-btn-c dia-btn" data-dia="vie">VIE 21</button>
-      <button class="dia-btn-c dia-btn" data-dia="sab">SÁB 22</button>
-      <button class="dia-btn-c dia-btn" data-dia="dom">DOM 23</button>
-    </div>
-    <div class="scroll"><div id="cartel-lista"></div></div>
+    <div class="scroll"><div id="contador-cont"></div></div>
   </section>
 
   <!-- ===================== NAV ===================== -->
@@ -128,9 +130,21 @@
     <button class="nav-btn" data-v="ahora"><span class="ic">◉</span><span class="lb">AHORA</span></button>
     <button class="nav-btn" data-v="plan"><span class="ic">★</span><span class="lb">MI PLAN</span><span class="nav-badge" id="badge-plan" style="display:none">0</span></button>
     <button class="nav-btn" data-v="fichar"><span class="ic">♥</span><span class="lb">FICHAR</span></button>
-    <button class="nav-btn" data-v="cartel"><span class="ic">▦</span><span class="lb">CARTEL</span></button>
+    <button class="nav-btn" data-v="contador"><span class="ic">☠</span><span class="lb">EL DAÑO</span></button>
   </nav>
 </div>
+
+<!-- ===== WRAPPED ===== -->
+<div id="wrapped">
+  <div class="wr-barras" id="wr-barras"></div>
+  <button class="wr-cerrar" onclick="cerrarWrapped()">✕</button>
+  <div class="wr-slide" id="wr-slide"></div>
+  <div class="wr-toque izq" onclick="wrappedMover(-1)"></div>
+  <div class="wr-toque der" onclick="wrappedMover(1)"></div>
+</div>
+
+<!-- ===== AÑADIR SUSTANCIA ===== -->
+<div id="hoja-sus"><div class="panel" id="hoja-sus-panel"></div></div>
 
 <!-- ===== MATCH ===== -->
 <div id="match">

@@ -11,15 +11,19 @@ const estado = {
   historial: [],    // para el rewind
   dia: 'vie',
   vista: 'fichar',
+  modoPlan: 'plan', // 'plan' | 'cartel'
   intro: true,
   ajustes: { andar: 6, pausaMin: 25 },
   sim: null,        // timestamp simulado, o null = hora real
+  registro: [],     // [{tipo, ts}] — lo que te has metido y cuándo
+  otras: [],        // sustancias que has añadido tú
 };
 
 function guardar() {
   try {
     localStorage.setItem(LS, JSON.stringify({
       prefs: estado.prefs, dia: estado.dia, intro: estado.intro, ajustes: estado.ajustes,
+      registro: estado.registro, otras: estado.otras,
     }));
   } catch (e) { /* modo privado */ }
 }
@@ -31,6 +35,8 @@ function cargar() {
       dia: d.dia || 'vie',
       intro: d.intro !== false,
       ajustes: Object.assign({ andar: 6, pausaMin: 25 }, d.ajustes || {}),
+      registro: Array.isArray(d.registro) ? d.registro : [],
+      otras: Array.isArray(d.otras) ? d.otras : [],
     });
   } catch (e) { /* nada */ }
 }
@@ -685,6 +691,500 @@ function bloqueSimulacion() {
 window.salirSim = function () { estado.sim = null; pintarAhora(); pintarPlan(); };
 
 /* ===========================================================
+   EL DAÑO — registro de consumo
+   =========================================================== */
+
+const TIPOS_FIJOS = {
+  cubata: { nombre: 'CUBATAS', sing: 'cubata', icono: '🥤', hue: 190 },
+  porro:  { nombre: 'PORROS',  sing: 'porro',  icono: '🌿', hue: 140 },
+};
+
+const SUGERENCIAS = ['MDMA', 'Speed', 'Keta', 'Tussi', 'Coca', 'Birra', 'Chupito'];
+
+function infoTipo(t) {
+  if (TIPOS_FIJOS[t]) return TIPOS_FIJOS[t];
+  return { nombre: t.toUpperCase(), sing: t.toLowerCase(), icono: '✦', hue: HUES[hash(t) % HUES.length] };
+}
+
+/* A qué actuación pertenece un momento dado. */
+function setEnMomento(ts) {
+  const dentro = SETS.filter(s => ts >= s.from && ts < s.to);
+  if (!dentro.length) return null;
+  // si suenan varios a la vez, gana el que tuvieras en el plan
+  return dentro.find(s => estado.prefs[s.id] === 2)
+      || dentro.find(s => estado.prefs[s.id] === 1)
+      || dentro[0];
+}
+
+function apuntar(tipo) {
+  estado.registro.push({ tipo, ts: ahora() });
+  guardar();
+  pintarContador();
+  const s = setEnMomento(ahora());
+  destello(infoTipo(tipo), s);
+}
+
+window.borrarUltimo = function () {
+  if (!estado.registro.length) return;
+  estado.registro.sort((a, b) => a.ts - b.ts).pop();
+  guardar(); pintarContador();
+};
+
+window.limpiarPruebas = function () {
+  estado.registro = estado.registro.filter(r => r.ts >= FEST_DESDE() && r.ts <= FEST_HASTA());
+  guardar(); pintarContador();
+};
+
+window.borrarRegistro = function () {
+  if (!confirm('¿Borrar todo el registro de consumo? Esto no se puede deshacer.')) return;
+  estado.registro = [];
+  guardar(); pintarContador();
+};
+
+/* Aviso visual al apuntar: confirma que se ha registrado y con qué artista. */
+function destello(info, s) {
+  const t = ahora();
+  const enFest = t >= FEST_DESDE() && t <= FEST_HASTA();
+  const d = document.createElement('div');
+  d.className = 'destello';
+  d.innerHTML = `<div class="ic">${info.icono}</div>
+    <div class="tx">+1 ${info.sing}</div>
+    ${!enFest ? `<div class="qn">prueba · no cuenta</div>`
+      : s ? `<div class="qn">con ${s.name}</div>` : `<div class="qn">entre conciertos</div>`}`;
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 1400);
+}
+
+/* ---- estadísticas ---- */
+
+const FEST_DESDE = () => SETS[0].from - 3600000;
+const FEST_HASTA = () => SETS[SETS.length - 1].to;
+
+function estadisticas() {
+  /* Solo cuentan los apuntes dentro de las fechas del festival. Los de fuera son
+     pruebas, y si se colaran descuadrarían el total con el desglose por día. */
+  const todos = [...estado.registro].sort((a, b) => a.ts - b.ts);
+  const reg = todos.filter(r => r.ts >= FEST_DESDE() && r.ts <= FEST_HASTA());
+  const fuera = todos.length - reg.length;
+  const total = reg.length;
+
+  const porTipo = {};
+  reg.forEach(r => porTipo[r.tipo] = (porTipo[r.tipo] || 0) + 1);
+
+  const porDia = {};
+  const entradasDia = {};
+  const porSet = {};
+  let enConciertos = 0;
+
+  reg.forEach(r => {
+    const s = setEnMomento(r.ts);
+    if (s) {
+      enConciertos++;
+      if (!porSet[s.id]) porSet[s.id] = { set: s, n: 0, tipos: {} };
+      porSet[s.id].n++;
+      porSet[s.id].tipos[r.tipo] = (porSet[s.id].tipos[r.tipo] || 0) + 1;
+    }
+    const dia = s ? s.day : diaDeTimestamp(r.ts);
+    if (dia) {
+      porDia[dia] = (porDia[dia] || 0) + 1;
+      (entradasDia[dia] = entradasDia[dia] || []).push(r);
+    }
+  });
+
+  // el concierto más castigado, y el más intenso por minuto
+  const sets = Object.values(porSet);
+  const masDrogado = sets.slice().sort((a, b) => b.n - a.n)[0] || null;
+  const masIntenso = sets.slice()
+    .filter(x => x.set.mins >= 20)
+    .sort((a, b) => (b.n / b.set.mins) - (a.n / a.set.mins))[0] || null;
+
+  // hora punta
+  const porHora = {};
+  reg.forEach(r => {
+    const h = new Date(r.ts).getHours();
+    porHora[h] = (porHora[h] || 0) + 1;
+  });
+  const horaPunta = Object.entries(porHora).sort((a, b) => b[1] - a[1])[0] || null;
+
+  // la media hora más bestia
+  let ventana = { n: 0, ts: null };
+  reg.forEach((r, i) => {
+    const n = reg.filter(x => x.ts >= r.ts && x.ts < r.ts + 1800000).length;
+    if (n > ventana.n) ventana = { n, ts: r.ts };
+  });
+
+  const diaTop = Object.entries(porDia).sort((a, b) => b[1] - a[1])[0] || null;
+
+  /* Ritmo medio: solo cuenta el tiempo de cada noche por separado. Medirlo de
+     principio a fin del festival metería en la media las horas de sueño entre
+     día y día, y saldría un número sin ningún sentido. */
+  let msActivo = 0, tramos = 0;
+  Object.values(entradasDia).forEach(rs => {
+    if (rs.length < 2) return;
+    msActivo += rs[rs.length - 1].ts - rs[0].ts;
+    tramos += rs.length - 1;
+  });
+  const cada = tramos ? msActivo / tramos : 0;
+
+  /* La racha sin nada tampoco puede cruzar de un día a otro. */
+  let racha2 = { ms: 0, desde: null };
+  Object.values(entradasDia).forEach(rs => {
+    for (let i = 1; i < rs.length; i++) {
+      const hueco = rs[i].ts - rs[i - 1].ts;
+      if (hueco > racha2.ms) racha2 = { ms: hueco, desde: rs[i - 1].ts };
+    }
+  });
+
+  return {
+    reg, total, fuera, porTipo, porDia, entradasDia, porSet, sets, enConciertos,
+    masDrogado, masIntenso, horaPunta, ventana, racha: racha2, diaTop, cada, msActivo,
+    ranking: sets.slice().sort((a, b) => b.n - a.n).slice(0, 5),
+  };
+}
+
+function diaDeTimestamp(ts) {
+  for (const d of FEST.days) {
+    const ss = SETS.filter(s => s.day === d.id);
+    if (ts >= ss[0].from - 3600000 && ts <= ss[ss.length - 1].to) return d.id;
+  }
+  return null;
+}
+
+/* ---- vista ---- */
+
+function pintarContador() {
+  const cont = $('#contador-cont');
+  const e = estadisticas();
+  const t = ahora();
+  const sonando = setEnMomento(t);
+
+  const tipos = [...Object.keys(TIPOS_FIJOS), ...estado.otras];
+
+  let html = `
+    <div class="ahora-mide">
+      <div class="eyebrow">${sonando ? 'APUNTANDO MIENTRAS SUENA' : 'AHORA MISMO'}</div>
+      <div class="mide-quien">${sonando ? sonando.name : 'Entre conciertos'}</div>
+    </div>
+
+    <div class="botonera">`;
+
+  tipos.forEach(tp => {
+    const info = infoTipo(tp);
+    const n = e.porTipo[tp] || 0;
+    html += `
+      <button class="bot-sus" style="--h:${info.hue}" onclick="apuntar('${tp.replace(/'/g, "\\'")}')">
+        <span class="bs-ic">${info.icono}</span>
+        <span class="bs-n">${n}</span>
+        <span class="bs-lbl">${info.nombre}</span>
+        <span class="bs-mas">+1</span>
+      </button>`;
+  });
+
+  html += `
+      <button class="bot-sus anadir" onclick="abrirSustancias()">
+        <span class="bs-ic">＋</span>
+        <span class="bs-lbl">OTRA<br>SUSTANCIA</span>
+      </button>
+    </div>`;
+
+  if (e.fuera) {
+    html += `
+      <div class="aviso-prueba">
+        <div class="t">${e.fuera} apunte${e.fuera === 1 ? '' : 's'} de prueba</div>
+        <div class="d">Están fuera de las fechas del festival, así que no cuentan en
+        las estadísticas ni en el wrapped. Bórralos antes del viernes.</div>
+        <button class="btn-linea" onclick="limpiarPruebas()">BORRAR LAS PRUEBAS</button>
+      </div>`;
+  }
+
+  if (e.total) {
+    html += `<div class="fila-acc">
+      <button class="btn-linea" onclick="borrarUltimo()">↺ QUITAR EL ÚLTIMO</button>
+    </div>`;
+
+    html += `<div class="eyebrow" style="margin:26px 0 12px">EL PARTE DE GUERRA</div><div class="rejilla">`;
+
+    const dato = (k, v) => `<div class="dato"><div class="dk">${k}</div><div class="dv">${v}</div></div>`;
+
+    html += dato('Total apuntado', `${e.total} cosa${e.total === 1 ? '' : 's'}`);
+    if (e.cada) html += dato('Ritmo medio', `una cada ${fmtDur(e.cada)}`);
+    if (e.masDrogado) html += dato('Concierto más drogado', `${e.masDrogado.set.name} · ${e.masDrogado.n}`);
+    if (e.horaPunta) html += dato('Hora punta', `${String(e.horaPunta[0]).padStart(2, '0')}:00 · ${e.horaPunta[1]}`);
+    if (e.ventana.n > 1) html += dato('Media hora más bestia', `${e.ventana.n} desde las ${fmtHora(e.ventana.ts)}`);
+    if (e.diaTop) {
+      const d = FEST.days.find(x => x.id === e.diaTop[0]);
+      html += dato('Peor día', `${d ? d.name : e.diaTop[0]} · ${e.diaTop[1]}`);
+    }
+    html += `</div>`;
+
+    if (e.ranking.length) {
+      html += `<div class="eyebrow" style="margin:26px 0 12px">RANKING DE ARTISTAS</div><div class="rejilla">`;
+      const max = e.ranking[0].n;
+      e.ranking.forEach((x, i) => {
+        const hue = FEST.stages[x.set.stage].hue;
+        html += `
+          <div class="rank" style="--h:${hue}">
+            <div class="rk-pos">${i + 1}</div>
+            <div class="rk-cuerpo">
+              <div class="rk-nom">${x.set.name}</div>
+              <div class="rk-barra"><i style="width:${x.n / max * 100}%"></i></div>
+            </div>
+            <div class="rk-n">${x.n}</div>
+          </div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `
+      <button class="btn-grande wrapped-cta" style="animation:none" onclick="abrirWrapped()">
+        VER MI WRAPPED
+      </button>
+      <button class="btn-linea peligro" style="margin-top:12px" onclick="borrarRegistro()">BORRAR TODO EL REGISTRO</button>`;
+  } else {
+    html += `
+      <div class="vacio" style="padding:38px 20px">
+        <div class="ic">📋</div>
+        <div class="t">Aún no has apuntado nada</div>
+        <div class="d">Dale a un botón cada vez que caiga algo.<br>
+        Cada toque se guarda con el artista que esté sonando,<br>y de ahí sale el wrapped del final.</div>
+      </div>`;
+  }
+
+  cont.innerHTML = html;
+  $('#contador-sub').textContent = e.total
+    ? `${e.total} EN TOTAL · ${e.enConciertos} EN CONCIERTOS`
+    : 'LLEVANDO LA CUENTA';
+}
+
+/* ---- añadir sustancia ---- */
+
+window.abrirSustancias = function () {
+  const h = $('#hoja-sus');
+  const yaEstan = new Set([...Object.keys(TIPOS_FIJOS), ...estado.otras.map(x => x.toLowerCase())]);
+  $('#hoja-sus-panel').innerHTML = `
+    <div class="asa"></div>
+    <h3>Añadir sustancia</h3>
+    <p class="hint" style="margin-bottom:16px">Se añade un botón nuevo al contador. Lo que escribas se queda en tu móvil.</p>
+    <div class="chips-sus">
+      ${SUGERENCIAS.filter(s => !yaEstan.has(s.toLowerCase()))
+        .map(s => `<button class="chip-sus" onclick="nuevaSustancia('${s}')">${s}</button>`).join('')}
+    </div>
+    <input type="text" id="in-sus" placeholder="o escríbela tú…" maxlength="18" autocomplete="off">
+    <button class="btn-linea" onclick="nuevaSustancia(document.getElementById('in-sus').value)">AÑADIR</button>
+    ${estado.otras.length ? `
+      <div class="eyebrow" style="margin:22px 0 10px">LAS TUYAS</div>
+      ${estado.otras.map(s => `
+        <div class="sus-fila">
+          <span>${s}</span>
+          <button onclick="quitarSustancia('${s.replace(/'/g, "\\'")}')">quitar</button>
+        </div>`).join('')}` : ''}
+  `;
+  h.classList.add('on');
+};
+
+window.nuevaSustancia = function (nombre) {
+  const n = (nombre || '').trim();
+  if (!n) return;
+  const existe = [...Object.keys(TIPOS_FIJOS), ...estado.otras]
+    .some(x => x.toLowerCase() === n.toLowerCase());
+  if (!existe) estado.otras.push(n);
+  guardar();
+  $('#hoja-sus').classList.remove('on');
+  pintarContador();
+};
+
+window.quitarSustancia = function (nombre) {
+  const usos = estado.registro.filter(r => r.tipo === nombre).length;
+  if (usos && !confirm(`Tienes ${usos} apuntes de "${nombre}". Se borran también. ¿Seguir?`)) return;
+  estado.otras = estado.otras.filter(x => x !== nombre);
+  estado.registro = estado.registro.filter(r => r.tipo !== nombre);
+  guardar();
+  abrirSustancias(); pintarContador();
+};
+
+/* ===========================================================
+   WRAPPED
+   =========================================================== */
+
+let wrIndice = 0;
+let wrSlides = [];
+
+function construirWrapped() {
+  const e = estadisticas();
+  const s = [];
+  const dias = FEST.days;
+
+  s.push({
+    tono: 'intro',
+    sup: 'RIVERLAND · ASTURIAS · 2026',
+    grande: 'TU<br>WRAPPED',
+    pie: 'Lo que ha pasado de verdad estos tres días',
+  });
+
+  s.push({
+    tono: 'total',
+    sup: 'EN TOTAL TE HAS METIDO',
+    numero: e.total,
+    grande: 'COSAS',
+    lista: Object.entries(e.porTipo).sort((a, b) => b[1] - a[1])
+      .map(([t, n]) => `${infoTipo(t).icono} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
+  });
+
+  if (e.cada) {
+    s.push({
+      tono: 'ritmo',
+      sup: 'ESO ES UNA COSA CADA',
+      grande: fmtDur(e.cada).toUpperCase(),
+      pie: e.cada < 1800000
+        ? 'Un ritmo difícil de sostener. Enhorabuena, supongo.'
+        : 'Sorprendentemente responsable.',
+    });
+  }
+
+  if (e.masDrogado) {
+    const x = e.masDrogado;
+    s.push({
+      tono: 'artista',
+      sup: 'TU CONCIERTO MÁS DROGADO',
+      grande: x.set.name,
+      numero: x.n,
+      pie: `${x.n} cosas en ${x.set.mins} minutos · ${x.set.stageName} · ${x.set.dayLabel}`,
+      lista: Object.entries(x.tipos).map(([t, n]) => `${infoTipo(t).icono} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
+      set: x.set,
+    });
+  }
+
+  if (e.masIntenso && (!e.masDrogado || e.masIntenso.set.id !== e.masDrogado.set.id)) {
+    const x = e.masIntenso;
+    s.push({
+      tono: 'artista',
+      sup: 'Y EL MÁS INTENSO POR MINUTO',
+      grande: x.set.name,
+      pie: `${(x.n / x.set.mins * 60).toFixed(1)} por hora durante todo el set`,
+      set: x.set,
+    });
+  }
+
+  if (e.diaTop) {
+    const d = dias.find(x => x.id === e.diaTop[0]);
+    s.push({
+      tono: 'dia',
+      sup: 'TU PEOR NOCHE',
+      grande: d ? d.name : e.diaTop[0],
+      numero: e.diaTop[1],
+      pie: `${e.diaTop[1]} cosas en una sola noche`,
+      lista: dias.map(x => `${x.short} · ${e.porDia[x.id] || 0}`),
+    });
+  }
+
+  if (e.horaPunta) {
+    s.push({
+      tono: 'hora',
+      sup: 'TU HORA PUNTA',
+      grande: `${String(e.horaPunta[0]).padStart(2, '0')}:00`,
+      pie: `${e.horaPunta[1]} cosas en esa franja. Todos sabemos lo que pasó ahí.`,
+    });
+  }
+
+  if (e.ventana.n > 2) {
+    s.push({
+      tono: 'bestia',
+      sup: 'TU MEDIA HORA MÁS BESTIA',
+      numero: e.ventana.n,
+      grande: 'EN 30 MIN',
+      pie: `A partir de las ${fmtHora(e.ventana.ts)}`,
+    });
+  }
+
+  if (e.ranking.length > 1) {
+    s.push({
+      tono: 'ranking',
+      sup: 'TU TOP DE ARTISTAS',
+      grande: 'POR DAÑO<br>CAUSADO',
+      ranking: e.ranking,
+    });
+  }
+
+  if (e.racha.ms > 3600000) {
+    s.push({
+      tono: 'racha',
+      sup: 'TU RACHA MÁS LARGA SIN NADA',
+      grande: fmtDur(e.racha.ms).toUpperCase(),
+      pie: `Desde las ${fmtHora(e.racha.desde)}. Alguien estuvo durmiendo.`,
+    });
+  }
+
+  s.push({
+    tono: 'final',
+    sup: 'VEREDICTO',
+    grande: veredicto(e),
+    pie: `${e.total} apuntes · ${e.sets.length} conciertos afectados · Riverland 2026`,
+  });
+
+  return s;
+}
+
+function veredicto(e) {
+  const t = e.total;
+  if (t >= 60) return 'NO SÉ<br>CÓMO<br>SIGUES<br>VIVO';
+  if (t >= 35) return 'FUISTE<br>A POR<br>TODAS';
+  if (t >= 20) return 'UN<br>FESTIVAL<br>COMO<br>DIOS<br>MANDA';
+  if (t >= 8)  return 'IBAS<br>SERVIDO';
+  return 'CASI<br>UN<br>MONJE';
+}
+
+window.abrirWrapped = function () {
+  wrSlides = construirWrapped();
+  wrIndice = 0;
+  $('#wrapped').classList.add('on');
+  pintarWrapped();
+};
+window.cerrarWrapped = () => $('#wrapped').classList.remove('on');
+window.wrappedMover = function (d) {
+  const n = wrIndice + d;
+  if (n < 0) return;
+  if (n >= wrSlides.length) return cerrarWrapped();
+  wrIndice = n;
+  pintarWrapped();
+};
+
+function pintarWrapped() {
+  const s = wrSlides[wrIndice];
+  const cont = $('#wr-slide');
+
+  $('#wr-barras').innerHTML = wrSlides
+    .map((_, i) => `<i class="${i <= wrIndice ? 'on' : ''}"></i>`).join('');
+
+  const fondo = s.set
+    ? `<div class="wr-fondo">${portadaHTML(s.set)}</div>`
+    : '';
+
+  let html = fondo + `<div class="wr-cuerpo">`;
+  if (s.sup) html += `<div class="wr-sup">${s.sup}</div>`;
+  if (s.numero !== undefined) html += `<div class="wr-num">${s.numero}</div>`;
+  if (s.grande) html += `<div class="wr-grande">${s.grande}</div>`;
+  if (s.lista) html += `<div class="wr-lista">${s.lista.map(l => `<div>${l}</div>`).join('')}</div>`;
+  if (s.ranking) {
+    const max = s.ranking[0].n;
+    html += `<div class="wr-rank">` + s.ranking.map((x, i) => `
+      <div class="wr-rk">
+        <span class="p">${i + 1}</span>
+        <span class="n">${x.set.name}</span>
+        <span class="b"><i style="width:${x.n / max * 100}%"></i></span>
+        <span class="c">${x.n}</span>
+      </div>`).join('') + `</div>`;
+  }
+  if (s.pie) html += `<div class="wr-pie">${s.pie}</div>`;
+  html += `</div>`;
+
+  cont.className = 'wr-slide tono-' + s.tono;
+  cont.innerHTML = html;
+  cont.style.animation = 'none';
+  void cont.offsetWidth;
+  cont.style.animation = '';
+}
+
+/* ===========================================================
    VISTA: CARTEL
    =========================================================== */
 
@@ -731,11 +1231,19 @@ window.irA = function (v) {
   estado.vista = v;
   $$('.vista').forEach(x => x.classList.toggle('activa', x.id === 'v-' + v));
   $$('.nav-btn').forEach(b => b.classList.toggle('on', b.dataset.v === v));
-  if (v === 'plan') pintarPlan();
+  if (v === 'plan') { pintarPlan(); pintarCartel(); }
   if (v === 'ahora') pintarAhora();
-  if (v === 'cartel') pintarCartel();
+  if (v === 'contador') pintarContador();
   if (v === 'fichar') { reconstruirBaraja(); pintarPila(); }
 };
+
+function cambiarModoPlan(m) {
+  estado.modoPlan = m;
+  $$('.con-btn').forEach(b => b.classList.toggle('on', b.dataset.modo === m));
+  $('#plan-lista').hidden = m !== 'plan';
+  $('#cartel-lista').hidden = m !== 'cartel';
+  if (m === 'plan') pintarPlan(); else pintarCartel();
+}
 
 function cambiarDia(d) {
   estado.dia = d; guardar();
@@ -819,7 +1327,8 @@ function iniciar() {
   });
   if (hoy) estado.dia = hoy.id;
 
-  $$('.dia-btn, .dia-btn-c').forEach(b => b.onclick = () => cambiarDia(b.dataset.dia));
+  $$('.dia-btn').forEach(b => b.onclick = () => cambiarDia(b.dataset.dia));
+  $$('.con-btn').forEach(b => b.onclick = () => cambiarModoPlan(b.dataset.modo));
   $$('.nav-btn').forEach(b => b.onclick = () => irA(b.dataset.v));
   $('#btn-no').onclick     = () => decidir(0);
   $('#btn-si').onclick     = () => decidir(1);
@@ -827,6 +1336,8 @@ function iniciar() {
   $('#btn-rewind').onclick = rewind;
   $$('.btn-ajustes').forEach(b => b.onclick = abrirAjustes);
   $('#hoja').onclick = e => { if (e.target.id === 'hoja') cerrarHoja(); };
+  $('#hoja-sus').onclick = e => { if (e.target.id === 'hoja-sus') e.currentTarget.classList.remove('on'); };
+  cambiarModoPlan(estado.modoPlan);
 
   $('#btn-empezar').onclick = () => {
     estado.intro = false; guardar();
@@ -844,10 +1355,13 @@ function iniciar() {
   if (!estado.intro) $('#intro').remove();
 
   irA(estado.intro ? 'fichar' : (Object.keys(estado.prefs).length ? 'ahora' : 'fichar'));
-  pintarPila(); pintarPlan(); pintarCartel(); pintarAhora();
+  pintarPila(); pintarPlan(); pintarCartel(); pintarAhora(); pintarContador();
 
   // reloj
-  setInterval(() => { if (estado.vista === 'ahora') pintarAhora(); }, 20000);
+  setInterval(() => {
+    if (estado.vista === 'ahora') pintarAhora();
+    if (estado.vista === 'contador') pintarContador();
+  }, 20000);
 
   // en localhost no se registra, para no servir versiones viejas mientras se desarrolla
   // (con ?sw=1 se fuerza, para poder probar el modo sin cobertura)

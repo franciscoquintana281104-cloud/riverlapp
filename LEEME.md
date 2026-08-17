@@ -25,7 +25,18 @@ Todo hueco libre de más de 25 min se convierte en una tarjeta de PAUSA.
 **SAL YA** cuando toca cruzar el recinto. Antes del festival muestra la cuenta
 atrás; durante, es el copiloto.
 
-**CARTEL** — el cartel completo. Cada línea rota entre ♥ / ★ / ✕ al tocarla.
+El **cartel completo** está dentro de MI PLAN, en la pestaña de al lado. Cada
+línea rota entre ♥ / ★ / ✕ al tocarla, por si te arrepientes de un fichaje.
+
+**EL DAÑO** — el contador. Un botón por cosa (cubatas, porros, y las que añadas
+tú). Cada toque se guarda **con el artista que estuviera sonando en ese momento**,
+y de ahí salen todas las estadísticas: concierto más drogado, hora punta, la
+media hora más bestia, ranking de artistas por daño causado. Al final, el botón
+**VER MI WRAPPED** monta un resumen a pantalla completa estilo Spotify Wrapped,
+que se pasa tocando.
+
+Los apuntes fuera de las fechas del festival se marcan como pruebas y no cuentan
+en las estadísticas; la app te ofrece borrarlos.
 
 ## Ajustes (⚙)
 
@@ -33,14 +44,15 @@ atrás; durante, es el copiloto.
   medido el recinto. Ajústalo el primer día y el plan se recalcula solo.
 - **Hueco mínimo para pausa**: por defecto 25 min.
 - **Modo simulación**: mueve la hora para ver cómo se comportará la app durante
-  el festival sin esperar al viernes.
+  el festival sin esperar al viernes. Ojo: lo que apuntes en EL DAÑO con la hora
+  simulada **sí cuenta** como si fuera de esa hora.
 
 ## Ficheros
 
     index.html          estructura
     styles.css          estética
     data.js             el cartel entero (83 sets, 3 escenarios, 3 días)
-    app.js              lógica: baraja, algoritmo del plan, pantalla AHORA
+    app.js              lógica: baraja, algoritmo del plan, AHORA, contador y wrapped
     fotos.js            qué artistas tienen foto real
     artistas/           69 fotos
     sw.js               service worker: cachea todo para el modo sin cobertura
@@ -65,6 +77,22 @@ añade la línea en `fotos.js`.
 Para volver a bajarlas todas:
 
     python3 bajar-fotos.py
+
+## Publicar y actualizar
+
+La primera vez, `./publicar.sh` (después de `gh auth login`): crea el repo, lo
+sube y activa GitHub Pages.
+
+Después, para cualquier cambio:
+
+    ./actualizar.sh "lo que has tocado"
+
+Sube el número de versión del service worker (si no, los móviles se quedan con
+lo viejo), commitea y hace push. GitHub Pages se reconstruye solo en 1-2 min.
+En el móvil: ábrela con datos, ciérrala, y al volver a abrirla ya está la nueva.
+
+No actualices el mismo día del festival: si algo sale mal no tendrás conexión
+para arreglarlo.
 
 ## Desarrollo
 
