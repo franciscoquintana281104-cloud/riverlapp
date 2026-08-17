@@ -70,7 +70,8 @@ de colores ni degradados: el plan se lee como una página.
     artistas/           69 fotos
     sw.js               service worker: cachea todo para el modo sin cobertura
     bajar-fotos.py      vuelve a bajar las fotos desde Deezer
-    hacer-iconos.py     regenera los iconos
+    icono-origen.webp   la R inflada, de donde salen los iconos
+    hacer-iconos.py     regenera los iconos desde icono-origen.webp
     cabeza.png          la cara del icono de EL DAÑO
     hacer-cabeza.py     recorta una cara sobre fondo blanco y genera cabeza.png
 
