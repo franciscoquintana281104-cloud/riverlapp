@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>RIVERLAPP · bocetos de estética</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#17171c; color:#fff; padding:26px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.rejilla { display:flex; flex-wrap:wrap; gap:26px; justify-content:center; }
+.opcion { width:390px; }
+.etiqueta { margin-bottom:10px; }
+.etiqueta b { font:700 17px/1.2 ui-monospace,monospace; letter-spacing:.06em; display:block; }
+.etiqueta span { font-size:12px; color:#9a94ad; display:block; margin-top:4px; line-height:1.45; }
+.tel {
+  width:390px; height:800px; border-radius:34px; overflow:hidden;
+  position:relative; box-shadow:0 18px 50px rgba(0,0,0,.55);
+}
+
+/* En el móvil, cada boceto ocupa la pantalla entera: es la única forma de
+   juzgar de verdad cómo se va a ver. */
+@media (max-width:820px) {
+  body { padding:14px; }
+  .rejilla { gap:34px; }
+  .opcion { width:100%; }
+  .tel { width:100%; height:calc(100dvh - 150px); min-height:620px; }
+  .etiqueta b { font-size:19px; }
+  .etiqueta span { font-size:13px; }
+}
+
+/* ===== estructura común de la pantalla ===== */
+.pant { position:absolute; inset:0; display:flex; flex-direction:column; }
+.cab { padding:22px 20px 8px; display:flex; justify-content:space-between; align-items:flex-start; }
+.cab h1 { font-size:15px; letter-spacing:.22em; }
+.cab .sub { font-size:9.5px; letter-spacing:.16em; margin-top:4px; opacity:.55; }
+.eng { width:34px; height:34px; display:grid; place-items:center; font-size:14px; }
+.barra-prog { margin:6px 20px 0; height:3px; }
+.barra-prog i { display:block; height:100%; width:28%; }
+.pistas { display:flex; justify-content:space-between; padding:8px 20px 0; font-size:9px; letter-spacing:.14em; opacity:.6; }
+.zona { flex:1; position:relative; margin:10px 18px 0; }
+.carta { position:absolute; inset:0; overflow:hidden; }
+.foto { position:absolute; inset:0; background-size:cover; background-position:center 22%; }
+.velo { position:absolute; inset:0; }
+.datos { position:absolute; left:0; right:0; bottom:0; padding:18px; }
+.nom { font-size:34px; line-height:.95; letter-spacing:-.03em; }
+.edad { font-size:20px; opacity:.75; }
+.chips { display:flex; gap:6px; margin-top:11px; flex-wrap:wrap; }
+.chip { font-size:9px; letter-spacing:.12em; padding:5px 9px; }
+.bio { margin-top:11px; font-size:12px; font-style:italic; opacity:.75; line-height:1.4; }
+.acc { display:flex; justify-content:center; gap:13px; padding:16px 0 12px; }
+.bt { width:54px; height:54px; display:grid; place-items:center; font-size:22px; }
+.bt.sm { width:42px; height:42px; font-size:15px; }
+.nav { height:62px; display:flex; }
+.nav div { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:8px; letter-spacing:.12em; }
+.nav div .i { font-size:17px; }
+.mono { font-family:ui-monospace,"SF Mono",Menlo,monospace; }
+
+/* ===================================================================
+   1 · NOCTURNO  (la actual)
+   =================================================================== */
+.t1 { background:#04030a; color:#fff; }
+.t1 .luz { position:absolute; inset:-20%; }
+.t1 .luz i { position:absolute; border-radius:50%; filter:blur(60px); mix-blend-mode:screen; }
+.t1 .luz i:nth-child(1){ width:60%; aspect-ratio:1; background:#ff2e9a; top:4%; left:-12%; opacity:.5 }
+.t1 .luz i:nth-child(2){ width:70%; aspect-ratio:1; background:#6b2bff; top:36%; right:-20%; opacity:.55 }
+.t1 .luz i:nth-child(3){ width:52%; aspect-ratio:1; background:#a24bff; bottom:-4%; left:10%; opacity:.5 }
+.t1 * { font-family:ui-monospace,"SF Mono",Menlo,monospace; }
+.t1 .cab h1,.t1 .nom { font-weight:700; text-transform:uppercase; }
+.t1 .barra-prog { background:rgba(255,255,255,.13); border-radius:2px; }
+.t1 .barra-prog i { background:linear-gradient(90deg,#a24bff,#ff2e9a); border-radius:2px; box-shadow:0 0 12px #ff2e9a; }
+.t1 .carta { border-radius:26px; border:1px solid rgba(255,255,255,.14); box-shadow:0 30px 70px rgba(0,0,0,.75); }
+.t1 .velo { background:linear-gradient(to top,rgba(4,3,10,.94) 6%,rgba(4,3,10,.5) 34%,transparent 62%); }
+.t1 .chip { border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.13); }
+.t1 .chip.esc { color:#ff8fd0; border-color:rgba(255,46,154,.45); background:rgba(255,46,154,.15); }
+.t1 .bt { border-radius:50%; background:rgba(12,10,22,.82); border:2px solid currentColor; }
+.t1 .bt.no{color:#ff3b57} .t1 .bt.si{color:#22e39a} .t1 .bt.top{color:#ffd23d} .t1 .bt.rw{color:#ffd23d;opacity:.7}
+.t1 .nav { background:rgba(6,4,14,.85); border-top:1px solid rgba(255,255,255,.12); backdrop-filter:blur(20px); }
+.t1 .nav div { color:rgba(255,255,255,.3) } .t1 .nav div.on { color:#fff }
+
+/* ===================================================================
+   2 · PÍXEL BRUTAL  (el póster, literal)
+   =================================================================== */
+.t2 { background:#000; color:#fff; }
+.t2 * { font-family:ui-monospace,"SF Mono",Menlo,monospace; }
+.t2 .cab h1,.t2 .nom { font-weight:700; text-transform:uppercase; }
+.t2 .cab h1 { color:#ff2e9a; }
+.t2 .rejilla-fondo { position:absolute; inset:0; opacity:.16;
+  background-image:linear-gradient(#ff2e9a 1px,transparent 1px),linear-gradient(90deg,#ff2e9a 1px,transparent 1px);
+  background-size:26px 26px; }
+.t2 .barra-prog { background:#2a0018; }
+.t2 .barra-prog i { background:#ff2e9a; }
+.t2 .carta { border:3px solid #ff2e9a; }
+.t2 .foto { filter:contrast(1.35) saturate(0) brightness(.9); }
+.t2 .velo { background:linear-gradient(to top,#000 8%,rgba(0,0,0,.55) 40%,transparent 68%);
+  mix-blend-mode:normal; }
+.t2 .carta::after { content:''; position:absolute; inset:0; background:#ff2e9a; mix-blend-mode:color; opacity:.55; }
+.t2 .datos { z-index:2; }
+.t2 .nom { font-size:38px; }
+.t2 .chip { background:#ff2e9a; color:#000; font-weight:700; }
+.t2 .chip.b { background:#fff; }
+.t2 .bio { font-style:normal; text-transform:uppercase; font-size:10px; letter-spacing:.06em; }
+.t2 .bt { border:3px solid #ff2e9a; color:#ff2e9a; background:#000; }
+.t2 .bt.si { border-color:#fff; color:#fff }
+.t2 .nav { background:#000; border-top:3px solid #ff2e9a; }
+.t2 .nav div { color:#5a5a5a } .t2 .nav div.on { color:#ff2e9a }
+
+/* ===================================================================
+   3 · FLÚOR INVERTIDO  (flyer impreso)
+   =================================================================== */
+.t3 { background:#ff2e9a; color:#000; }
+.t3 * { font-family:ui-monospace,"SF Mono",Menlo,monospace; }
+.t3 .cab h1,.t3 .nom { font-weight:700; text-transform:uppercase; }
+.t3 .barra-prog { background:rgba(0,0,0,.25); }
+.t3 .barra-prog i { background:#000; }
+.t3 .carta { border:2px solid #000; background:#ff2e9a; }
+.t3 .foto { filter:grayscale(1) contrast(1.5); mix-blend-mode:multiply; }
+.t3 .velo { background:linear-gradient(to top,#ff2e9a 4%,rgba(255,46,154,.4) 36%,transparent 62%); }
+.t3 .nom { font-size:36px; }
+.t3 .chip { background:#000; color:#ff2e9a; font-weight:700; }
+.t3 .chip.b { background:#fff; color:#000; }
+.t3 .bio { font-style:italic; opacity:.8; }
+.t3 .bt { border:2px solid #000; color:#000; border-radius:50%; }
+.t3 .bt.si { background:#000; color:#ff2e9a }
+.t3 .nav { background:#000; color:#ff2e9a; }
+.t3 .nav div { color:rgba(255,46,154,.45) } .t3 .nav div.on { color:#ff2e9a }
+.t3 .eng { border:2px solid #000; border-radius:50% }
+
+/* ===================================================================
+   4 · CRISTAL  (vidrio esmerilado, muy iOS)
+   =================================================================== */
+.t4 { background:#0d0716; color:#fff; }
+.t4 .luz { position:absolute; inset:-10%; }
+.t4 .luz i { position:absolute; border-radius:50%; filter:blur(80px); }
+.t4 .luz i:nth-child(1){ width:70%; aspect-ratio:1; background:#ff2e9a; top:-6%; left:-16%; opacity:.75 }
+.t4 .luz i:nth-child(2){ width:80%; aspect-ratio:1; background:#3b5bff; top:40%; right:-26%; opacity:.7 }
+.t4 .luz i:nth-child(3){ width:60%; aspect-ratio:1; background:#00d4c8; bottom:-8%; left:0%; opacity:.55 }
+.t4 .cab h1 { font-weight:600; letter-spacing:.02em; font-size:19px; }
+.t4 .cab .sub { letter-spacing:.02em; font-size:11px; }
+.t4 .barra-prog { background:rgba(255,255,255,.18); border-radius:3px; }
+.t4 .barra-prog i { background:#fff; border-radius:3px; }
+.t4 .pistas { font-size:10px; letter-spacing:0; }
+.t4 .carta { border-radius:30px; background:rgba(255,255,255,.1); backdrop-filter:blur(30px);
+  border:1px solid rgba(255,255,255,.25); box-shadow:0 24px 60px rgba(0,0,0,.5); }
+.t4 .velo { background:linear-gradient(to top,rgba(13,7,22,.9) 4%,transparent 55%); }
+.t4 .nom { font-size:33px; font-weight:600; letter-spacing:-.02em; }
+.t4 .chip { border-radius:999px; background:rgba(255,255,255,.18); backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.25); letter-spacing:.02em; font-size:10.5px; }
+.t4 .bio { font-style:normal; }
+.t4 .bt { border-radius:50%; background:rgba(255,255,255,.16); backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.3); box-shadow:0 8px 22px rgba(0,0,0,.35); }
+.t4 .nav { background:rgba(255,255,255,.09); backdrop-filter:blur(30px); border-top:1px solid rgba(255,255,255,.18); }
+.t4 .nav div { color:rgba(255,255,255,.45); letter-spacing:.02em; font-size:9px }
+.t4 .nav div.on { color:#fff }
+
+/* ===================================================================
+   5 · CROMO Y2K  (rave de CD-ROM)
+   =================================================================== */
+.t5 { background:linear-gradient(160deg,#1a0033,#3d0a5c 45%,#0a0020); color:#fff; }
+.t5 * { font-family:ui-monospace,"SF Mono",Menlo,monospace; }
+.t5 .cab h1 { font-weight:700; text-transform:uppercase;
+  background:linear-gradient(180deg,#fff,#b7c6ff 45%,#5a6fd8 55%,#e8f0ff);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.t5 .barra-prog { background:rgba(255,255,255,.15); border-radius:3px; }
+.t5 .barra-prog i { background:linear-gradient(90deg,#c0d0ff,#7a8fff,#fff); border-radius:3px; }
+.t5 .carta { border-radius:20px; border:2px solid transparent;
+  background:linear-gradient(#0a0020,#0a0020) padding-box,
+             linear-gradient(150deg,#fff,#8fa4ff 30%,#3d2a6b 55%,#e8f0ff) border-box;
+  box-shadow:0 20px 50px rgba(0,0,0,.6); }
+.t5 .foto { filter:saturate(1.15) contrast(1.1); }
+.t5 .velo { background:linear-gradient(to top,rgba(10,0,32,.95) 6%,rgba(30,10,70,.4) 38%,transparent 64%); }
+.t5 .nom { font-size:35px; font-weight:700; text-transform:uppercase;
+  background:linear-gradient(180deg,#fff 30%,#9db0ff 52%,#4a5bb8 58%,#fff);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+.t5 .chip { border-radius:6px; background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(140,160,255,.15));
+  border:1px solid rgba(255,255,255,.4); }
+.t5 .bt { border-radius:50%; background:linear-gradient(180deg,#e9eeff,#7f92e8 50%,#3a4899);
+  color:#1a0033; border:1px solid rgba(255,255,255,.7); box-shadow:0 6px 16px rgba(0,0,0,.5), inset 0 2px 3px rgba(255,255,255,.9); }
+.t5 .nav { background:linear-gradient(180deg,rgba(60,20,110,.9),rgba(10,0,32,.95));
+  border-top:1px solid rgba(255,255,255,.3); }
+.t5 .nav div { color:rgba(200,210,255,.45) } .t5 .nav div.on { color:#fff }
+
+/* ===================================================================
+   6 · EDITORIAL  (tipografía grande, mucho aire)
+   =================================================================== */
+.t6 { background:#0a0a0c; color:#f2f0ee; }
+.t6 .cab { padding:26px 22px 10px; }
+.t6 .cab h1 { font-weight:400; letter-spacing:.3em; font-size:11px; opacity:.6; }
+.t6 .cab .sub { display:none; }
+.t6 .barra-prog { background:rgba(255,255,255,.1); margin-top:14px; }
+.t6 .barra-prog i { background:#ff2e9a; }
+.t6 .pistas { font-size:9px; letter-spacing:.2em; opacity:.4; padding-top:10px; }
+.t6 .zona { margin:16px 22px 0; }
+.t6 .carta { border-radius:2px; }
+.t6 .foto { filter:grayscale(.85) contrast(1.1) brightness(.85); }
+.t6 .velo { background:linear-gradient(to top,rgba(10,10,12,.96) 10%,rgba(10,10,12,.35) 45%,transparent 70%); }
+.t6 .datos { padding:20px 2px; }
+.t6 .nom { font-size:44px; font-weight:400; letter-spacing:-.035em; line-height:.92; }
+.t6 .edad { font-size:15px; opacity:.45; }
+.t6 .chips { gap:0; margin-top:16px; border-top:1px solid rgba(255,255,255,.16); padding-top:10px; }
+.t6 .chip { background:none; padding:0 16px 0 0; letter-spacing:.16em; opacity:.6; font-size:9px; }
+.t6 .chip.esc { color:#ff2e9a; opacity:1; }
+.t6 .bio { font-style:italic; font-size:13px; opacity:.5; margin-top:14px; }
+.t6 .bt { border-radius:50%; border:1px solid rgba(255,255,255,.25); background:none; font-size:17px; }
+.t6 .bt.si { border-color:#ff2e9a; color:#ff2e9a }
+.t6 .nav { background:#0a0a0c; border-top:1px solid rgba(255,255,255,.1); }
+.t6 .nav div { color:rgba(255,255,255,.28); letter-spacing:.16em; font-size:7.5px }
+.t6 .nav div.on { color:#f2f0ee }
+.t6 .nav div.on .i { color:#ff2e9a }
+</style>
+</head>
+<body>
+<div class="rejilla" id="rejilla"></div>
+
+<script>
+const FOTO = 'artistas/cecilio-g.jpg';
+
+const ESTILOS = [
+  { c:'t1', n:'1 · NOCTURNO', d:'La actual. Focos morados difuminados, monoespaciada, esquinas muy redondeadas.', luz:true },
+  { c:'t2', n:'2 · PÍXEL BRUTAL', d:'El póster llevado a la app: negro puro, magenta duro, sin degradados ni brillos, rejilla y bordes gruesos.', rejilla:true },
+  { c:'t3', n:'3 · FLÚOR INVERTIDO', d:'Le damos la vuelta: fondo magenta, todo en negro. Fotos a una tinta. Parece un flyer impreso.' },
+  { c:'t4', n:'4 · CRISTAL', d:'Vidrio esmerilado sobre luces de colores. Suave y muy iOS. La menos "festival", la más app.', luz:true },
+  { c:'t5', n:'5 · CROMO Y2K', d:'Cromados, biselados y azules metálicos. Rave de los 2000, CD-ROM.' },
+  { c:'t6', n:'6 · EDITORIAL', d:'Casi negro, tipografía enorme, mucho aire y el magenta solo como acento. Sobrio.' },
+];
+
+const pantalla = e => `
+  <div class="opcion">
+    <div class="etiqueta"><b>${e.n}</b><span>${e.d}</span></div>
+    <div class="tel ${e.c}">
+      ${e.luz ? '<div class="luz"><i></i><i></i><i></i></div>' : ''}
+      ${e.rejilla ? '<div class="rejilla-fondo"></div>' : ''}
+      <div class="pant">
+        <div class="cab">
+          <div><h1>FICHAR</h1><div class="sub">83 PERFILES CERCA DE TI</div></div>
+          <div class="eng">⚙</div>
+        </div>
+        <div class="barra-prog"><i></i></div>
+        <div class="pistas"><span>← ME RAYA · ME RENTA →</span><span>23/83</span></div>
+        <div class="zona">
+          <div class="carta">
+            <div class="foto" style="background-image:url('${FOTO}')"></div>
+            <div class="velo"></div>
+            <div class="datos">
+              <div class="nom">CECILIO G <span class="edad">50</span></div>
+              <div class="chips">
+                <span class="chip esc">LA CARPA</span>
+                <span class="chip b">VIE 21</span>
+                <span class="chip">21:30 – 22:20</span>
+              </div>
+              <div class="bio">“Si tengo que explicarte quién soy, no me merezco.”</div>
+            </div>
+          </div>
+        </div>
+        <div class="acc">
+          <div class="bt sm rw">↺</div>
+          <div class="bt no">✕</div>
+          <div class="bt top">★</div>
+          <div class="bt si">♥</div>
+        </div>
+        <div class="nav">
+          <div><span class="i">◉</span>AHORA</div>
+          <div><span class="i">★</span>MI PLAN</div>
+          <div class="on"><span class="i">♥</span>FICHAR</div>
+          <div><span class="i">☠</span>EL DAÑO</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+document.getElementById('rejilla').innerHTML = ESTILOS.map(pantalla).join('');
+</script>
+</body>
+</html>
