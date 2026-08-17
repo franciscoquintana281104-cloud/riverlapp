@@ -330,45 +330,102 @@ function actualizarProgreso() {
   badge.style.display = n ? 'grid' : 'none';
 }
 
+/* Un solo repintado por fotograma: escribir estilos en cada pointermove
+   (que llegan más rápido que los fotogramas) es lo que hacía que se notara
+   pastoso el arrastre. */
+let rafArrastre = null;
+
+window.pintarArrastre = pintarArrastre; // accesible para depurar
+function pintarArrastre() {
+  rafArrastre = null;
+  if (!arrastrando) return;
+  const { carta, dx, dy, signo } = arrastrando;
+
+  const giro = (dx / 16) * signo;
+  carta.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${giro}deg)`;
+
+  const arriba = dy < -40 && Math.abs(dy) > Math.abs(dx) * 1.2;
+  arrastrando.sRenta.style.opacity = arriba ? 0 : Math.min(1, Math.max(0, dx / 90));
+  arrastrando.sRaya.style.opacity  = arriba ? 0 : Math.min(1, Math.max(0, -dx / 90));
+  arrastrando.sSisi.style.opacity  = arriba ? Math.min(1, -dy / 110) : 0;
+
+  // la carta de debajo va emergiendo conforme la de arriba se va
+  const atras = arrastrando.atras;
+  if (atras) {
+    const p = Math.min(1, Math.max(Math.abs(dx) / 150, Math.abs(dy) / 170));
+    atras.style.transform = `scale(${(0.94 + 0.06 * p).toFixed(4)}) translateY(${(16 - 16 * p).toFixed(2)}px)`;
+    atras.style.opacity = (0.85 + 0.15 * p).toFixed(3);
+  }
+}
+
 function engancharArrastre(carta) {
   carta.addEventListener('pointerdown', e => {
     if (arrastrando) return;
     try { carta.setPointerCapture(e.pointerId); } catch (_) { /* puntero sintético */ }
-    carta.classList.remove('suave');
-    arrastrando = { carta, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0 };
+    carta.classList.remove('suave', 'volviendo');
+
+    // agarrar por la mitad de abajo invierte el giro, como una carta de verdad
+    const caja = carta.getBoundingClientRect();
+    const signo = (e.clientY - caja.top) > caja.height * 0.5 ? -1 : 1;
+
+    arrastrando = {
+      carta, signo,
+      x0: e.clientX, y0: e.clientY, dx: 0, dy: 0,
+      t: performance.now(), px: e.clientX, py: e.clientY, vx: 0, vy: 0,
+      sRenta: $('.sello.renta', carta),
+      sRaya:  $('.sello.raya', carta),
+      sSisi:  $('.sello.sisi', carta),
+      atras:  carta.previousElementSibling,
+    };
+    document.body.classList.add('arrastrando');
   });
 
   carta.addEventListener('pointermove', e => {
-    if (!arrastrando || arrastrando.carta !== carta) return;
-    arrastrando.dx = e.clientX - arrastrando.x0;
-    arrastrando.dy = e.clientY - arrastrando.y0;
-    const { dx, dy } = arrastrando;
-    carta.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${dx / 18}deg)`;
+    const a = arrastrando;
+    if (!a || a.carta !== carta) return;
 
-    const arriba = dy < -40 && Math.abs(dy) > Math.abs(dx) * 1.2;
-    $('.sello.renta', carta).style.opacity = arriba ? 0 : Math.min(1, Math.max(0, dx / 90));
-    $('.sello.raya',  carta).style.opacity = arriba ? 0 : Math.min(1, Math.max(0, -dx / 90));
-    $('.sello.sisi',  carta).style.opacity = arriba ? Math.min(1, -dy / 110) : 0;
+    const t = performance.now();
+    // dt mínimo de 8 ms: con el hilo principal atascado pueden llegar varios
+    // eventos juntos, y sin esto la velocidad se dispara y decide sola
+    const dt = Math.max(8, t - a.t);
+    const tope = x => Math.max(-2.5, Math.min(2.5, x));   // px/ms
+    // velocidad suavizada: así un golpe seco y corto también cuenta
+    a.vx = tope(a.vx * 0.7 + ((e.clientX - a.px) / dt) * 0.3);
+    a.vy = tope(a.vy * 0.7 + ((e.clientY - a.py) / dt) * 0.3);
+    a.t = t; a.px = e.clientX; a.py = e.clientY;
+
+    a.dx = e.clientX - a.x0;
+    a.dy = e.clientY - a.y0;
+    if (!rafArrastre) rafArrastre = requestAnimationFrame(pintarArrastre);
   });
 
-  const soltar = e => {
-    if (!arrastrando || arrastrando.carta !== carta) return;
-    const { dx, dy } = arrastrando;
+  const soltar = () => {
+    const a = arrastrando;
+    if (!a || a.carta !== carta) return;
     arrastrando = null;
-    carta.classList.add('suave');
+    document.body.classList.remove('arrastrando');
+    if (rafArrastre) { cancelAnimationFrame(rafArrastre); rafArrastre = null; }
 
-    if (dy < -110 && Math.abs(dy) > Math.abs(dx)) return decidir(2, carta);
-    if (dx > 105)  return decidir(1, carta);
-    if (dx < -105) return decidir(0, carta);
+    // adónde iría la carta si la sueltas: cuenta el gesto, no solo la distancia
+    const PROY = 110;
+    const px = a.dx + a.vx * PROY;
+    const py = a.dy + a.vy * PROY;
 
+    if (py < -150 && Math.abs(py) > Math.abs(px)) return decidir(2, carta, a);
+    if (px > 130)  return decidir(1, carta, a);
+    if (px < -130) return decidir(0, carta, a);
+
+    // vuelve a su sitio con un rebote corto
+    carta.classList.add('volviendo');
     carta.style.transform = '';
-    $$('.sello', carta).forEach(s => s.style.opacity = 0);
+    [a.sRenta, a.sRaya, a.sSisi].forEach(s => s && (s.style.opacity = 0));
+    if (a.atras) { a.atras.style.transform = ''; a.atras.style.opacity = ''; }
   };
   carta.addEventListener('pointerup', soltar);
   carta.addEventListener('pointercancel', soltar);
 }
 
-function decidir(valor, carta) {
+function decidir(valor, carta, gesto) {
   const s = baraja[0];
   if (!s) return;
   const nodo = carta || $('#pila').lastElementChild;
@@ -378,19 +435,40 @@ function decidir(valor, carta) {
   guardar();
 
   if (nodo) {
-    nodo.classList.add('suave');
-    const salida = valor === 2 ? 'translate3d(0,-140vh,0) rotate(-6deg)'
-                 : valor === 1 ? 'translate3d(130vw,40px,0) rotate(24deg)'
-                 : 'translate3d(-130vw,40px,0) rotate(-24deg)';
-    nodo.style.transform = salida;
+    nodo.classList.remove('volviendo');
+    nodo.classList.add('saliendo');
+
+    // la carta sale siguiendo el gesto, no por una trayectoria fija
+    let x, y, giro;
+    if (gesto) {
+      const norma = Math.hypot(gesto.vx, gesto.vy) || 1;
+      const impulso = Math.min(2.2, Math.max(1, norma * 0.9));
+      x = gesto.dx + (valor === 2 ? 0 : (valor === 1 ? 1 : -1)) * 900 * impulso;
+      y = valor === 2 ? gesto.dy - 1400 * impulso : gesto.dy + gesto.vy * 260 + 60;
+      giro = (x / 16) * gesto.signo;
+    } else {
+      x = valor === 2 ? 0 : (valor === 1 ? 1 : -1) * 900;
+      y = valor === 2 ? -1400 : 60;
+      giro = valor === 2 ? -5 : (valor === 1 ? 22 : -22);
+    }
+    nodo.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${giro}deg)`;
     nodo.style.opacity = '0';
+
     const sello = $('.sello.' + (valor === 2 ? 'sisi' : valor === 1 ? 'renta' : 'raya'), nodo);
     if (sello) sello.style.opacity = 1;
+
+    // la de debajo termina de subir mientras la otra se va
+    const atras = nodo.previousElementSibling;
+    if (atras) {
+      atras.classList.add('emergiendo');
+      atras.style.transform = 'scale(1) translateY(0)';
+      atras.style.opacity = '1';
+    }
   }
 
   if (valor === 2) mostrarMatch(s);
 
-  setTimeout(() => { reconstruirBaraja(); pintarPila(); }, valor === 2 ? 60 : 240);
+  setTimeout(() => { reconstruirBaraja(); pintarPila(); }, valor === 2 ? 60 : 300);
 }
 
 window.reiniciarBaraja = function () {
@@ -1247,14 +1325,80 @@ window.cicloPref = function (id) {
    NAVEGACIÓN
    =========================================================== */
 
-window.irA = function (v) {
-  estado.vista = v;
-  $$('.vista').forEach(x => x.classList.toggle('activa', x.id === 'v-' + v));
-  $$('.nav-btn').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+const ORDEN_VISTAS = ['ahora', 'plan', 'fichar', 'contador'];
+let transicion = 0;
+
+function refrescarVista(v) {
   if (v === 'plan') { pintarPlan(); pintarCartel(); }
   if (v === 'ahora') pintarAhora();
   if (v === 'contador') pintarContador();
   if (v === 'fichar') { reconstruirBaraja(); pintarPila(); }
+}
+
+/* Deslizamiento estilo iOS: la vista nueva entra entera desde un lado y la
+   anterior se retira a un tercio de velocidad, que es lo que da sensación de
+   profundidad en vez de un simple corte. */
+window.irA = function (v, inmediato) {
+  const entrante = $('#v-' + v);
+  const saliente = $('.vista.activa');
+  if (!entrante) return;
+
+  const previa = estado.vista;
+  estado.vista = v;
+  $$('.nav-btn').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  refrescarVista(v);
+
+  /* Invalida cualquier transición pendiente, también en el camino inmediato:
+     si no, el temporizador de una anterior se despertaba después y desactivaba
+     la vista que acababa de ponerse, dejando la pantalla en blanco. */
+  const id = ++transicion;
+
+  if (!saliente || saliente === entrante || inmediato) {
+    $$('.vista').forEach(x => {
+      x.classList.toggle('activa', x === entrante);
+      x.classList.remove('entra', 'sale');
+      x.style.transform = '';
+    });
+    return;
+  }
+
+  const dir = ORDEN_VISTAS.indexOf(v) > ORDEN_VISTAS.indexOf(previa) ? 1 : -1;
+
+  // limpia cualquier transición a medias (toques rápidos seguidos)
+  $$('.vista').forEach(x => {
+    if (x !== entrante && x !== saliente) {
+      x.classList.remove('activa', 'entra', 'sale');
+      x.style.transform = '';
+    }
+  });
+
+  entrante.classList.add('activa');
+  entrante.classList.remove('entra', 'sale');
+  entrante.style.transform = `translate3d(${dir * 100}%,0,0)`;
+  entrante.style.opacity = '0';
+  saliente.classList.remove('entra', 'sale');
+  saliente.style.opacity = '';
+
+  // Fuerza el cálculo de estilo para que el navegador vea la posición de
+  // partida antes de animar. Con requestAnimationFrame esto no ocurría si la
+  // pestaña estaba en segundo plano y la vista aparecía de golpe.
+  void entrante.offsetWidth;
+
+  entrante.classList.add('entra');
+  entrante.style.transform = 'translate3d(0,0,0)';
+  entrante.style.opacity = '1';
+  saliente.classList.add('sale');
+  saliente.style.transform = `translate3d(${-dir * 32}%,0,0)`;
+
+  setTimeout(() => {
+    if (id !== transicion) return;
+    saliente.classList.remove('activa', 'sale');
+    saliente.style.transform = '';
+    saliente.style.opacity = '';
+    entrante.classList.remove('entra');
+    entrante.style.transform = '';
+    entrante.style.opacity = '';
+  }, 420);
 };
 
 function cambiarModoPlan(m) {
@@ -1347,6 +1491,19 @@ async function mostrarVersion() {
    ARRANQUE
    =========================================================== */
 
+/* Si existe cabeza.png, sustituye el icono de EL DAÑO y suelta la cabeza a
+   volar por esa pantalla. Si no está, se queda la calavera y no pasa nada. */
+function activarCara() {
+  const img = new Image();
+  img.onload = () => {
+    document.documentElement.style.setProperty('--cara', "url('cabeza.png')");
+    document.body.classList.add('hay-cara');
+    const ic = $('#ic-dano');
+    if (ic) { ic.textContent = ''; ic.classList.add('cara'); }
+  };
+  img.src = 'cabeza.png';
+}
+
 function animarLogo() {
   const cont = $('#logo-anim');
   const txt = 'RIVERLAPP';
@@ -1357,6 +1514,7 @@ function animarLogo() {
 function iniciar() {
   cargar();
   animarLogo();
+  activarCara();
   reconstruirBaraja();
 
   // día por defecto: el que toque si estamos en festival

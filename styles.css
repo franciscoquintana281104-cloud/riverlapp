@@ -33,6 +33,9 @@
   --nav-h: 66px;
   --ease-out: cubic-bezier(.16,1,.3,1);
   --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  /* la curva de las transiciones de iOS: arranca rápido y frena muy largo */
+  --ease-ios: cubic-bezier(.32,.72,0,1);
+  --rebote: cubic-bezier(.18,.89,.32,1.22);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -113,9 +116,23 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 #app { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
 
-.vista { position: absolute; inset: 0; display: none; flex-direction: column; }
-.vista.activa { display: flex; animation: entrarVista .42s var(--ease-out); }
-@keyframes entrarVista { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+.vista {
+  position: absolute; inset: 0; display: none; flex-direction: column;
+  will-change: transform;
+}
+.vista.activa { display: flex; }
+/* El deslizamiento lo conduce el JS; aquí solo van las curvas.
+   Las vistas son transparentes (el fondo de luces se ve a través), así que la
+   que sale además se desvanece: sin eso los dos textos se superponen y se lee
+   como un borrón en vez de como un cambio de página. */
+.vista.entra {
+  transition: transform .42s var(--ease-ios), opacity .28s ease-out;
+}
+.vista.sale {
+  transition: transform .42s var(--ease-ios), opacity .3s ease-in;
+  opacity: 0;
+  pointer-events: none;
+}
 
 .scroll {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -248,6 +265,23 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .carta.atras   { transform: scale(.94) translateY(16px); opacity: .85; }
 .carta.atras-2 { transform: scale(.88) translateY(30px); opacity: .5; }
 .carta.suave   { transition: transform .5s var(--ease-out), opacity .4s ease; }
+
+/* vuelta a su sitio: rebote corto, como si tuviera un muelle */
+.carta.volviendo {
+  transition: transform .52s var(--rebote);
+}
+.carta.volviendo .sello { transition: opacity .25s ease; }
+
+/* salida: sigue la dirección del gesto y se desvanece antes de llegar lejos */
+.carta.saliendo {
+  transition: transform .42s cubic-bezier(.22,.61,.36,1), opacity .34s linear .04s;
+  pointer-events: none;
+}
+
+/* la de debajo termina de emerger mientras la de arriba se va */
+.carta.emergiendo {
+  transition: transform .38s var(--ease-out), opacity .3s ease;
+}
 
 .carta-info {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
@@ -846,6 +880,19 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .nav-btn .ic { font-size: 19px; transition: transform .34s var(--ease-spring); }
 .nav-btn .lb { font-family: var(--mono); font-size: 8.5px; font-weight: 700; letter-spacing: .13em; }
 .nav-btn.on { color: #fff; }
+
+/* la cara sustituye al icono: mismo hueco que los demás, en escala de grises
+   hasta que la pestaña está activa */
+.nav-btn .ic.cara {
+  width: 23px; height: 23px; border-radius: 50%;
+  background: var(--cara) center/cover no-repeat;
+  filter: grayscale(1) brightness(.85);
+  transition: filter .3s ease, transform .34s var(--ease-spring);
+}
+.nav-btn.on .ic.cara {
+  filter: none;
+  box-shadow: 0 0 12px rgba(255,46,154,.6);
+}
 .nav-btn.on .ic { transform: translateY(-2px) scale(1.14); filter: drop-shadow(0 0 10px var(--magenta)); }
 .nav-btn.on::before {
   content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
@@ -946,6 +993,60 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
   color: var(--mute-2); line-height: 1.7;
 }
+
+/* ===========================================================
+   LA CABEZA QUE VUELA
+   Deriva por la pantalla de EL DAÑO. Va detrás del contenido y sin capturar
+   toques, para que no estorbe. Solo transform: no cuesta nada repintarla.
+   =========================================================== */
+
+.cabeza-vuela {
+  position: absolute; z-index: 0; pointer-events: none;
+  width: 132px; height: 132px;
+  background: var(--cara) center/contain no-repeat;
+  filter: drop-shadow(0 10px 26px rgba(0,0,0,.6));
+  will-change: transform;
+  animation: derivaCabeza 34s linear infinite, cabeceo 5.5s ease-in-out infinite;
+  display: none;
+}
+body.hay-cara .cabeza-vuela { display: block; }
+
+/* El contenido va por delante: si la cabeza pasa por encima tapa los números
+   del contador, que es justo lo que hay que poder leer. */
+#v-contador .cab,
+#v-contador .scroll { position: relative; z-index: 2; }
+
+@keyframes derivaCabeza {
+  0%   { transform: translate3d(-14vw, 12vh, 0) rotate(-8deg); }
+  17%  { transform: translate3d(58vw, 26vh, 0) rotate(12deg); }
+  33%  { transform: translate3d(18vw, 54vh, 0) rotate(-14deg); }
+  50%  { transform: translate3d(72vw, 66vh, 0) rotate(9deg); }
+  67%  { transform: translate3d(6vw, 34vh, 0) rotate(-6deg); }
+  84%  { transform: translate3d(64vw, 8vh, 0) rotate(15deg); }
+  100% { transform: translate3d(-14vw, 12vh, 0) rotate(-8deg); }
+}
+/* va apareciendo y desapareciendo, para que no cante que es siempre la misma */
+@keyframes cabeceo {
+  0%, 100% { opacity: .5; }
+  50%      { opacity: .85; }
+}
+
+/* ===========================================================
+   RENDIMIENTO DURANTE EL ARRASTRE
+   Los focos y el grano se repintan en cada fotograma; con una carta
+   moviéndose encima, el compositor se atraganta y el gesto se nota pastoso.
+   Mientras arrastras se congelan: no se ve, y se libera toda la GPU.
+   =========================================================== */
+
+body.arrastrando .blob,
+body.arrastrando #haces { animation-play-state: paused; }
+
+body.arrastrando #grano { opacity: 0; }
+
+/* la carta que se mueve va en su propia capa, sin mezclas que recalcular */
+body.arrastrando .carta:last-child { will-change: transform; }
+body.arrastrando .carta:last-child .tinte,
+body.arrastrando .carta:last-child .tinte-2 { will-change: opacity; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

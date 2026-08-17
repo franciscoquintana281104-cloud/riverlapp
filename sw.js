@@ -13,6 +13,7 @@ const BASE = [
   './icono-180.png',
   './icono-192.png',
   './icono-512.png',
+  './cabeza.png',
 ];
 
 /* Las fotos también se precachean: en el recinto no hay red para pedirlas,

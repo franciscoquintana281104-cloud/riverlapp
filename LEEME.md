@@ -60,6 +60,8 @@ con conciertos de verdad, mueve el modo simulación desde ⚙.
     sw.js               service worker: cachea todo para el modo sin cobertura
     bajar-fotos.py      vuelve a bajar las fotos desde Deezer
     hacer-iconos.py     regenera los iconos
+    cabeza.png          la cara del icono de EL DAÑO
+    hacer-cabeza.py     recorta una cara sobre fondo blanco y genera cabeza.png
 
 ## Fotos
 
