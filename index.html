@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>RIVERLAPP</title>
+<meta name="description" content="Tu horario de Riverland 2026, montado a tu medida.">
+<meta name="theme-color" content="#04030a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RIVERLAPP">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" href="icono-180.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===== LUCES ===== -->
+<div id="luces">
+  <div id="haces"></div>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+<div id="vineta"></div>
+<div id="grano"></div>
+
+<!-- ===== INTRO ===== -->
+<div id="intro">
+  <div class="logo-riv" id="logo-anim"></div>
+  <div class="tag">RIVERLAND · ASTURIAS · 2026</div>
+  <div class="desc">Ficha a los artistas como si fuera Tinder y te monto el horario de los tres días. Con pausas incluidas.</div>
+  <button class="btn-grande" id="btn-empezar">EMPEZAR A FICHAR</button>
+  <button class="btn-txt" id="btn-saltar">Ya lo tengo hecho, llévame al plan</button>
+</div>
+
+<div id="app">
+
+  <!-- ===================== AHORA ===================== -->
+  <section class="vista" id="v-ahora">
+    <header class="cab">
+      <div>
+        <h1>AHORA</h1>
+        <div class="sub">TU COPILOTO DE RIVERLAND</div>
+      </div>
+      <button class="icon-btn btn-ajustes">⚙</button>
+    </header>
+    <div class="scroll"><div id="ahora-cont"></div></div>
+  </section>
+
+  <!-- ===================== MI PLAN ===================== -->
+  <section class="vista" id="v-plan">
+    <header class="cab">
+      <div>
+        <h1>MI PLAN</h1>
+        <div class="sub">HORARIO MONTADO A TU MEDIDA</div>
+      </div>
+      <button class="icon-btn btn-ajustes">⚙</button>
+    </header>
+    <div class="dias">
+      <button class="dia-btn" data-dia="vie">VIE 21</button>
+      <button class="dia-btn" data-dia="sab">SÁB 22</button>
+      <button class="dia-btn" data-dia="dom">DOM 23</button>
+    </div>
+    <div class="scroll"><div class="tl" id="plan-lista"></div></div>
+  </section>
+
+  <!-- ===================== FICHAR ===================== -->
+  <section class="vista" id="v-fichar">
+    <header class="cab">
+      <div>
+        <h1>FICHAR</h1>
+        <div class="sub" id="deck-txt">83 perfiles cerca de ti</div>
+      </div>
+      <button class="icon-btn btn-ajustes">⚙</button>
+    </header>
+
+    <div id="deck-prog">
+      <div class="barra"><i style="width:0"></i></div>
+      <div class="txt">
+        <span class="eyebrow">← ME RAYA · ME RENTA → · ↑ SÍ O SÍ</span>
+        <span class="eyebrow" id="deck-cont">0/83</span>
+      </div>
+    </div>
+
+    <div id="pila"></div>
+
+    <div id="acciones">
+      <div class="accion-wrap">
+        <button class="accion sm rewind" id="btn-rewind">↺</button>
+        <span class="accion-lbl">UPS</span>
+      </div>
+      <div class="accion-wrap">
+        <button class="accion no" id="btn-no">✕</button>
+        <span class="accion-lbl">ME RAYA</span>
+      </div>
+      <div class="accion-wrap">
+        <button class="accion top" id="btn-top">★</button>
+        <span class="accion-lbl">SÍ O SÍ</span>
+      </div>
+      <div class="accion-wrap">
+        <button class="accion si" id="btn-si">♥</button>
+        <span class="accion-lbl">ME RENTA</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CARTEL ===================== -->
+  <section class="vista" id="v-cartel">
+    <header class="cab">
+      <div>
+        <h1>CARTEL</h1>
+        <div class="sub">83 ARTISTAS · 3 ESCENARIOS</div>
+      </div>
+      <button class="icon-btn btn-ajustes">⚙</button>
+    </header>
+    <div class="dias">
+      <button class="dia-btn-c dia-btn" data-dia="vie">VIE 21</button>
+      <button class="dia-btn-c dia-btn" data-dia="sab">SÁB 22</button>
+      <button class="dia-btn-c dia-btn" data-dia="dom">DOM 23</button>
+    </div>
+    <div class="scroll"><div id="cartel-lista"></div></div>
+  </section>
+
+  <!-- ===================== NAV ===================== -->
+  <nav id="nav">
+    <button class="nav-btn" data-v="ahora"><span class="ic">◉</span><span class="lb">AHORA</span></button>
+    <button class="nav-btn" data-v="plan"><span class="ic">★</span><span class="lb">MI PLAN</span><span class="nav-badge" id="badge-plan" style="display:none">0</span></button>
+    <button class="nav-btn" data-v="fichar"><span class="ic">♥</span><span class="lb">FICHAR</span></button>
+    <button class="nav-btn" data-v="cartel"><span class="ic">▦</span><span class="lb">CARTEL</span></button>
+  </nav>
+</div>
+
+<!-- ===== MATCH ===== -->
+<div id="match">
+  <div>
+    <div class="sello-match">★ SÍ O SÍ ★</div>
+    <div class="txt">¡ES UN<br>MATCH!</div>
+    <div class="quien" id="match-quien"></div>
+    <div class="pie" id="match-pie"></div>
+  </div>
+</div>
+
+<!-- ===== HOJA DE AJUSTES ===== -->
+<div id="hoja"><div class="panel" id="hoja-panel"></div></div>
+
+<script src="fotos.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
