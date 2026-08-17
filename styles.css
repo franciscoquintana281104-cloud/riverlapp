@@ -70,7 +70,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    LUCES — fondo ambiental
    =========================================================== */
 
-#luces { position: fixed; inset: -20%; z-index: 0; pointer-events: none; overflow: hidden; }
+/* Las vistas son opacas y lo tapan entero, así que esto ya no se ve: se apaga
+   para no estar animando focos difuminados que nadie mira. El rescoldo magenta
+   vive ahora dentro de cada vista. */
+#luces, #vineta { display: none; }
 
 .blob {
   position: absolute;
@@ -113,23 +116,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 #app { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
 
+/* Cada vista es una página OPACA. Antes eran transparentes y se veían la una a
+   través de la otra durante el deslizamiento; el degradado va aquí dentro para
+   no perder el rescoldo magenta del fondo. */
 .vista {
   position: absolute; inset: 0; display: none; flex-direction: column;
-  will-change: transform;
+  background:
+    radial-gradient(135% 68% at 50% -10%, rgba(255,46,154,.09), transparent 60%),
+    var(--ink);
 }
 .vista.activa { display: flex; }
-/* El deslizamiento lo conduce el JS; aquí solo van las curvas.
-   Las vistas son transparentes (el fondo de luces se ve a través), así que la
-   que sale además se desvanece: sin eso los dos textos se superponen y se lee
-   como un borrón en vez de como un cambio de página. */
-.vista.entra {
-  transition: transform .42s var(--ease-ios), opacity .28s ease-out;
+
+/* El JS pone el z-index en cada transición: sin él manda el orden del HTML y
+   al ir hacia atrás la vista que sale se pintaba ENCIMA de la que entra. */
+.vista.entra, .vista.sale {
+  transition: transform .42s var(--ease-ios);
+  will-change: transform;      /* solo mientras dura, no de forma permanente */
 }
-.vista.sale {
-  transition: transform .42s var(--ease-ios), opacity .3s ease-in;
-  opacity: 0;
-  pointer-events: none;
-}
+.vista.sale { pointer-events: none; }
 
 .scroll {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -405,7 +409,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   border-radius: 50%;
   background: conic-gradient(from -90deg, var(--magenta) var(--deg, 0deg), rgba(242,240,238,.1) var(--deg, 0deg) 360deg);
   display: grid; place-items: center;
-  transition: --deg .8s linear;
+  /* igual que el intervalo del latido: si dura menos, el anillo se para entre
+     segundo y segundo y se nota el tirón */
+  transition: --deg 1s linear;
 }
 .anillo::before {
   content: ''; position: absolute; inset: 4px; border-radius: 50%;

@@ -23,7 +23,10 @@ Todo hueco libre de más de 25 min se convierte en una tarjeta de PAUSA.
 
 **AHORA** — qué estás viendo, cuánto queda, qué viene después y el aviso
 **SAL YA** cuando toca cruzar el recinto. Antes del festival muestra la cuenta
-atrás; durante, es el copiloto.
+atrás; durante, es el copiloto. El reloj corre **en directo con segundos** y el
+anillo avanza con él; solo se repinta la pantalla entera cuando cambia algo de
+fondo (empieza otro concierto, salta el aviso), y el segundero se para si la app
+no está en primer plano.
 
 El **cartel completo** está dentro de MI PLAN, en la pestaña de al lado. Cada
 línea rota entre ♥ / ★ / ✕ al tocarla, por si te arrepientes de un fichaje.

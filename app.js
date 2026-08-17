@@ -181,6 +181,20 @@ function fmtCorto(ms) {
   if (m < 60) return { n: m, u: 'MIN' };
   return { n: Math.floor(m / 60), u: 'H', extra: m % 60 };
 }
+/* Cuenta atrás en vivo: devuelve el número grande y la línea de debajo.
+   Con más de un día manda el día; por debajo, el reloj con segundos. */
+function fmtCuenta(ms) {
+  const tot = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(tot / 86400);
+  const h = Math.floor(tot / 3600) % 24;
+  const m = Math.floor(tot / 60) % 60;
+  const sg = tot % 60;
+  const dos = n => String(n).padStart(2, '0');
+  if (d > 0) return { grande: `${d}<small>d</small>`, pie: `${dos(h)}:${dos(m)}:${dos(sg)}` };
+  if (h > 0) return { grande: `${h}:${dos(m)}:${dos(sg)}`, pie: 'RESTANTE' };
+  return { grande: `${dos(m)}:${dos(sg)}`, pie: 'RESTANTE' };
+}
+
 function fmtHora(ts) {
   const d = new Date(ts);
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
@@ -616,17 +630,14 @@ function pintarAhora() {
 
   // ---- antes de que abra ----
   if (t < primero) {
-    const falta = primero - t;
-    const d = Math.floor(falta / 86400000);
-    const h = Math.floor(falta / 3600000) % 24;
-    const m = Math.floor(falta / 60000) % 60;
+    const c = fmtCuenta(primero - t);
     html += `
       <div class="ahora-hero" style="text-align:center">
         <div class="eyebrow">RIVERLAND ABRE EN</div>
-        <div class="anillo" style="--deg:360deg">
+        <div class="anillo" id="anillo" style="--deg:360deg">
           <div class="centro">
-            <div class="queda">${d}<small>d</small> ${h}<small>h</small></div>
-            <div class="queda-lbl">${m} MINUTO${m === 1 ? '' : 'S'}</div>
+            <div class="queda" id="cd-grande">${c.grande}</div>
+            <div class="queda-lbl" id="cd-pie">${c.pie}</div>
           </div>
         </div>
         <div class="ahora-nom" style="font-size:22px">VIERNES 21 · 19:10</div>
@@ -646,6 +657,7 @@ function pintarAhora() {
 
     html += bloqueSimulacion();
     cont.innerHTML = html;
+    estado._clave = claveAhora(t);
     return;
   }
 
@@ -659,6 +671,7 @@ function pintarAhora() {
         <div class="d">Tenías <b>${vistos}</b> artistas en el plan.<br>Ahora toca dormir tres días seguidos.</div>
       </div>` + bloqueSimulacion();
     cont.innerHTML = html;
+    estado._clave = claveAhora(t);
     return;
   }
 
@@ -668,16 +681,15 @@ function pintarAhora() {
 
   if (actual) {
     const prog = (t - actual.from) / (actual.to - actual.from);
-    const queda = actual.to - t;
-    const q = fmtCorto(queda);
+    const c = fmtCuenta(actual.to - t);
     const hue = FEST.stages[actual.stage].hue;
     html += `
       <div class="ahora-hero">
         <div class="eyebrow" style="text-align:center">AHORA ESTÁS VIENDO</div>
-        <div class="anillo" style="--deg:${(prog * 360).toFixed(1)}deg">
+        <div class="anillo" id="anillo" style="--deg:${(prog * 360).toFixed(1)}deg">
           <div class="centro">
-            <div class="queda">${q.n}${q.u === 'MIN' ? '' : `<small>h ${q.extra}m</small>`}</div>
-            <div class="queda-lbl">${q.u === 'MIN' ? 'MINUTOS RESTANTES' : 'RESTANTE'}</div>
+            <div class="queda" id="cd-grande">${c.grande}</div>
+            <div class="queda-lbl" id="cd-pie">${c.pie}</div>
           </div>
         </div>
         <div class="ahora-nom">${actual.name}</div>
@@ -720,7 +732,7 @@ function pintarAhora() {
 
     html += `
       <div style="margin-top:22px">
-        <div class="eyebrow" style="margin-bottom:11px">A CONTINUACIÓN · EN ${fmtDur(falta).toUpperCase()}</div>
+        <div class="eyebrow" style="margin-bottom:11px">A CONTINUACIÓN · EN <span id="cd-prox">${fmtDur(falta).toUpperCase()}</span></div>
         <div class="tarjeta" style="--h:${hue}">
           <div class="nom">${siguiente.name}</div>
           ${siguiente.sub ? `<div class="sb">${siguiente.sub}</div>` : ''}
@@ -746,7 +758,7 @@ function pintarAhora() {
         <div class="linea" style="--h:${hue}" onclick="cicloPref('${s.id}')">
           <div class="h" style="color:hsl(${hue} 90% 74%)">${FEST.stages[s.stage].short}</div>
           <div class="n">${s.name}</div>
-          <div class="h" style="min-width:34px;text-align:right">${prog}%</div>
+          <div class="h" style="min-width:34px;text-align:right" data-pct="${s.id}">${prog}%</div>
         </div>`;
     });
     html += `</div></div>`;
@@ -754,6 +766,67 @@ function pintarAhora() {
 
   html += bloqueSimulacion();
   cont.innerHTML = html;
+  estado._clave = claveAhora(t);
+}
+
+/* ---- refresco en vivo, cada segundo ----
+   Repintar la pantalla entera cada segundo perdería el scroll y reiniciaría las
+   animaciones, así que solo se reescriben los números. La pantalla completa se
+   vuelve a montar únicamente cuando cambia algo de fondo: empieza otro
+   concierto, aparece el aviso de SAL YA, etc. */
+
+function claveAhora(t) {
+  if (t < SETS[0].from) return 'antes';
+  if (t > SETS[SETS.length - 1].to) return 'despues';
+  const plan = planCompleto();
+  const actual = plan.find(s => t >= s.from && t < s.to);
+  const sig = plan.find(s => s.from > t);
+  let salYa = false;
+  if (sig) {
+    const distinto = !actual || actual.stage !== sig.stage;
+    salYa = distinto && (sig.from - t) <= estado.ajustes.andar * 60000 + 120000;
+  }
+  const sonando = SETS.filter(s => t >= s.from && t < s.to).map(s => s.id).join(',');
+  return `${actual ? actual.id : '-'}|${sig ? sig.id : '-'}|${salYa ? 1 : 0}|${sonando}`;
+}
+
+function latido() {
+  if (estado.vista !== 'ahora' || document.visibilityState !== 'visible') return;
+  const t = ahora();
+
+  if (claveAhora(t) !== estado._clave) { pintarAhora(); return; }
+
+  const primero = SETS[0].from;
+  const plan = planCompleto();
+  const actual = plan.find(s => t >= s.from && t < s.to);
+
+  let restante = null, prog = null;
+  if (t < primero) { restante = primero - t; prog = 1; }
+  else if (actual) { restante = actual.to - t; prog = (t - actual.from) / (actual.to - actual.from); }
+
+  if (restante !== null) {
+    const c = fmtCuenta(restante);
+    const g = $('#cd-grande'), pie = $('#cd-pie'), anillo = $('#anillo');
+    if (g && g.innerHTML !== c.grande) g.innerHTML = c.grande;
+    if (pie && pie.textContent !== c.pie) pie.textContent = c.pie;
+    if (anillo) anillo.style.setProperty('--deg', (prog * 360).toFixed(2) + 'deg');
+  }
+
+  const sig = plan.find(s => s.from > t);
+  const prox = $('#cd-prox');
+  if (sig && prox) {
+    const falta = sig.from - t;
+    // por debajo de cinco minutos se ve el segundero: es cuando importa
+    const txt = falta < 300000 ? fmtCuenta(falta).grande : fmtDur(falta).toUpperCase();
+    if (prox.textContent !== txt) prox.textContent = txt;
+  }
+
+  $$('[data-pct]').forEach(el => {
+    const s = SETS_BY_ID[el.dataset.pct];
+    if (!s) return;
+    const p = ((t - s.from) / (s.to - s.from) * 100).toFixed(0) + '%';
+    if (el.textContent !== p) el.textContent = p;
+  });
 }
 
 function bloqueSimulacion() {
@@ -1358,6 +1431,7 @@ window.irA = function (v, inmediato) {
       x.classList.toggle('activa', x === entrante);
       x.classList.remove('entra', 'sale');
       x.style.transform = '';
+      x.style.zIndex = '';
     });
     return;
   }
@@ -1369,13 +1443,19 @@ window.irA = function (v, inmediato) {
     if (x !== entrante && x !== saliente) {
       x.classList.remove('activa', 'entra', 'sale');
       x.style.transform = '';
+      x.style.opacity = '';
+      x.style.zIndex = '';
     }
   });
+
+  // la que entra SIEMPRE por delante, vaya hacia adelante o hacia atrás
+  entrante.style.zIndex = '2';
+  saliente.style.zIndex = '1';
 
   entrante.classList.add('activa');
   entrante.classList.remove('entra', 'sale');
   entrante.style.transform = `translate3d(${dir * 100}%,0,0)`;
-  entrante.style.opacity = '0';
+  entrante.style.opacity = '';
   saliente.classList.remove('entra', 'sale');
   saliente.style.opacity = '';
 
@@ -1386,19 +1466,18 @@ window.irA = function (v, inmediato) {
 
   entrante.classList.add('entra');
   entrante.style.transform = 'translate3d(0,0,0)';
-  entrante.style.opacity = '1';
   saliente.classList.add('sale');
-  saliente.style.transform = `translate3d(${-dir * 32}%,0,0)`;
+  saliente.style.transform = `translate3d(${-dir * 30}%,0,0)`;
 
   setTimeout(() => {
     if (id !== transicion) return;
     saliente.classList.remove('activa', 'sale');
     saliente.style.transform = '';
-    saliente.style.opacity = '';
+    saliente.style.zIndex = '';
     entrante.classList.remove('entra');
     entrante.style.transform = '';
-    entrante.style.opacity = '';
-  }, 420);
+    entrante.style.zIndex = '';
+  }, 440);
 };
 
 function cambiarModoPlan(m) {
@@ -1465,6 +1544,7 @@ function abrirAjustes() {
   $('#in-sim').oninput = e => {
     estado.sim = +e.target.value;
     $('#val-sim').textContent = fmtHora(estado.sim);
+    estado._clave = null;
     pintarAhora(); pintarPlan();
   };
 }
@@ -1555,11 +1635,16 @@ function iniciar() {
   irA(estado.intro ? 'fichar' : (Object.keys(estado.prefs).length ? 'ahora' : 'fichar'));
   pintarPila(); pintarPlan(); pintarCartel(); pintarAhora(); pintarContador();
 
-  // reloj
+  // reloj: el segundero solo mueve números; el resto se refresca despacio
+  setInterval(latido, 1000);
   setInterval(() => {
-    if (estado.vista === 'ahora') pintarAhora();
+    if (document.visibilityState !== 'visible') return;
     if (estado.vista === 'contador') pintarContador();
   }, 20000);
+  // al volver a la app desde segundo plano, ponerse al día de golpe
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && estado.vista === 'ahora') pintarAhora();
+  });
 
   // en localhost no se registra, para no servir versiones viejas mientras se desarrolla
   // (con ?sw=1 se fuerza, para poder probar el modo sin cobertura)
