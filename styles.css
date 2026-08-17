@@ -359,7 +359,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: width .45s var(--ease-out);
   box-shadow: 0 0 12px var(--magenta);
 }
-#deck-prog .txt { display: flex; justify-content: space-between; margin-top: 7px; }
+/* Solo queda el contador: va a la derecha, donde estaba con la leyenda al lado. */
+#deck-prog .txt { display: flex; justify-content: flex-end; margin-top: 7px; }
 
 /* ¡ES UN MATCH! */
 #match {
