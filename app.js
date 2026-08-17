@@ -14,7 +14,7 @@ const estado = {
   modoPlan: 'plan', // 'plan' | 'cartel'
   intro: true,
   ajustes: { andar: 6, pausaMin: 25 },
-  sim: null,        // timestamp simulado, o null = hora real
+  sim: null,        // desfase en ms sobre la hora real (null = hora real)
   registro: [],     // [{tipo, ts}] — lo que te has metido y cuándo
   otras: [],        // sustancias que has añadido tú
 };
@@ -41,7 +41,9 @@ function cargar() {
   } catch (e) { /* nada */ }
 }
 
-const ahora = () => estado.sim ?? Date.now();
+/* La simulación es un DESFASE sobre la hora real, no un instante fijo: guardando
+   un instante, el reloj se quedaba clavado y nada avanzaba. */
+const ahora = () => Date.now() + (estado.sim || 0);
 
 window.estado = estado; // para depurar desde la consola
 
@@ -196,11 +198,6 @@ function fmtCuenta(ms) {
   return { grande: `${dos(m)}:${dos(sg)}`, pie: 'RESTANTE' };
 }
 
-/* Segundero: un punto que da la vuelta cada minuto. El arco de progreso de un
-   concierto avanza 0,12° por segundo —invisible—, así que sin esto la pantalla
-   parece congelada aunque el reloj corra. El ángulo crece sin dar la vuelta
-   atrás para que nunca gire al revés. */
-const gradosSegundero = t => Math.floor(t / 1000) * 6;
 
 function fmtHora(ts) {
   const d = new Date(ts);
@@ -637,12 +634,12 @@ function pintarAhora() {
 
   // ---- antes de que abra ----
   if (t < primero) {
-    const c = fmtCuenta(primero - t);
+    const m = medidaAhora(t);
+    const c = fmtCuenta(m.restante);
     html += `
       <div class="ahora-hero" style="text-align:center">
         <div class="eyebrow">RIVERLAND ABRE EN</div>
-        <div class="anillo" id="anillo" style="--deg:360deg">
-          <i class="segundero" id="segundero" style="--seg:${gradosSegundero(t)}deg"></i>
+        <div class="anillo" id="anillo" style="--deg:${gradosAnillo(m).toFixed(2)}deg">
           <div class="centro">
             <div class="queda" id="cd-grande">${c.grande}</div>
             <div class="queda-lbl" id="cd-pie">${c.pie}</div>
@@ -688,14 +685,13 @@ function pintarAhora() {
   const siguiente = plan.find(s => s.from > t);
 
   if (actual) {
-    const prog = (t - actual.from) / (actual.to - actual.from);
-    const c = fmtCuenta(actual.to - t);
+    const m = medidaAhora(t);
+    const c = fmtCuenta(m.restante);
     const hue = FEST.stages[actual.stage].hue;
     html += `
       <div class="ahora-hero">
         <div class="eyebrow" style="text-align:center">AHORA ESTÁS VIENDO</div>
-        <div class="anillo" id="anillo" style="--deg:${(prog * 360).toFixed(1)}deg">
-          <i class="segundero" id="segundero" style="--seg:${gradosSegundero(t)}deg"></i>
+        <div class="anillo" id="anillo" style="--deg:${gradosAnillo(m).toFixed(2)}deg">
           <div class="centro">
             <div class="queda" id="cd-grande">${c.grande}</div>
             <div class="queda-lbl" id="cd-pie">${c.pie}</div>
@@ -709,14 +705,16 @@ function pintarAhora() {
         </div>
       </div>`;
   } else {
+    const m = medidaAhora(t);
+    const c = fmtCuenta(m.restante);
     const pausaMsg = siguiente ? mensajePausa(Math.round((siguiente.from - t) / 60000), siguiente.from) : 'Descanso';
     html += `
       <div class="ahora-hero" style="text-align:center">
-        <div class="eyebrow">AHORA MISMO</div>
-        <div class="anillo" style="--deg:0deg">
+        <div class="eyebrow">PAUSA · EMPIEZA EN</div>
+        <div class="anillo" id="anillo" style="--deg:${gradosAnillo(m).toFixed(2)}deg">
           <div class="centro">
-            <div class="queda" style="font-size:30px">PAUSA</div>
-            <div class="queda-lbl">SIN NADA TUYO</div>
+            <div class="queda" id="cd-grande">${c.grande}</div>
+            <div class="queda-lbl" id="cd-pie">${c.pie}</div>
           </div>
         </div>
         <div class="ahora-nom pausa-msg">${pausaMsg}</div>
@@ -762,12 +760,12 @@ function pintarAhora() {
     html += `<div style="margin-top:30px"><div class="eyebrow" style="margin-bottom:11px">SONANDO AHORA EN TODO EL RECINTO</div><div class="rejilla">`;
     sonando.forEach(s => {
       const hue = FEST.stages[s.stage].hue;
-      const prog = ((t - s.from) / (s.to - s.from) * 100).toFixed(0);
+      const queda = fmtDur(s.to - t);
       html += `
         <div class="linea" style="--h:${hue}" onclick="cicloPref('${s.id}')">
           <div class="h" style="color:hsl(${hue} 90% 74%)">${FEST.stages[s.stage].short}</div>
           <div class="n">${s.name}</div>
-          <div class="h" style="min-width:34px;text-align:right" data-pct="${s.id}">${prog}%</div>
+          <div class="h" style="min-width:56px;text-align:right" data-pct="${s.id}">${queda}</div>
         </div>`;
     });
     html += `</div></div>`;
@@ -783,6 +781,40 @@ function pintarAhora() {
    animaciones, así que solo se reescriben los números. La pantalla completa se
    vuelve a montar únicamente cuando cambia algo de fondo: empieza otro
    concierto, aparece el aviso de SAL YA, etc. */
+
+/* Un único sitio donde se decide qué mide el anillo. Antes lo calculaban por
+   separado la pantalla y el latido, y podían discrepar. */
+function medidaAhora(t) {
+  const plan = planCompleto();
+  const primero = SETS[0].from, ultimo = SETS[SETS.length - 1].to;
+
+  if (t < primero) {
+    // el último día se ve cerrar; por encima de eso, lleno
+    return { fase: 'antes', restante: primero - t, total: 86400000 };
+  }
+  if (t > ultimo) return { fase: 'despues' };
+
+  const actual = plan.find(s => t >= s.from && t < s.to);
+  const siguiente = plan.find(s => s.from > t);
+
+  if (actual) {
+    return { fase: 'set', actual, siguiente,
+             restante: actual.to - t, total: actual.to - actual.from };
+  }
+  // en una pausa el anillo mide lo que queda de pausa
+  const previo = [...plan].reverse().find(s => s.to <= t);
+  const desde = previo ? previo.to : t;
+  return { fase: 'pausa', siguiente, previo,
+           restante: siguiente ? siguiente.from - t : 0,
+           total: siguiente ? Math.max(60000, siguiente.from - desde) : 1 };
+}
+
+/* Grados del arco que SIGUE encendido: empieza en 360 y se va cerrando. */
+function gradosAnillo(m) {
+  if (!m || !m.total) return 0;
+  const f = Math.max(0, Math.min(1, m.restante / m.total));
+  return f * 360;
+}
 
 function claveAhora(t) {
   if (t < SETS[0].from) return 'antes';
@@ -805,25 +837,17 @@ function latido() {
 
   if (claveAhora(t) !== estado._clave) { pintarAhora(); return; }
 
-  const primero = SETS[0].from;
-  const plan = planCompleto();
-  const actual = plan.find(s => t >= s.from && t < s.to);
-
-  let restante = null, prog = null;
-  if (t < primero) { restante = primero - t; prog = 1; }
-  else if (actual) { restante = actual.to - t; prog = (t - actual.from) / (actual.to - actual.from); }
-
-  if (restante !== null) {
-    const c = fmtCuenta(restante);
+  // la misma medida que usa la pantalla, para que no puedan discrepar
+  const m = medidaAhora(t);
+  if (m.fase !== 'despues') {
+    const c = fmtCuenta(m.restante);
     const g = $('#cd-grande'), pie = $('#cd-pie'), anillo = $('#anillo');
     if (g && g.innerHTML !== c.grande) g.innerHTML = c.grande;
     if (pie && pie.textContent !== c.pie) pie.textContent = c.pie;
-    if (anillo) anillo.style.setProperty('--deg', (prog * 360).toFixed(2) + 'deg');
+    if (anillo) anillo.style.setProperty('--deg', gradosAnillo(m).toFixed(2) + 'deg');
   }
 
-  const seg = $('#segundero');
-  if (seg) seg.style.setProperty('--seg', gradosSegundero(t) + 'deg');
-
+  const plan = planCompleto();
   const sig = plan.find(s => s.from > t);
   const prox = $('#cd-prox');
   if (sig && prox) {
@@ -833,20 +857,21 @@ function latido() {
     if (prox.textContent !== txt) prox.textContent = txt;
   }
 
+  // lo que queda de cada set, no un porcentaje: el anillo es la única barra
   $$('[data-pct]').forEach(el => {
     const s = SETS_BY_ID[el.dataset.pct];
     if (!s) return;
-    const p = ((t - s.from) / (s.to - s.from) * 100).toFixed(0) + '%';
-    if (el.textContent !== p) el.textContent = p;
+    const q = fmtDur(s.to - t);
+    if (el.textContent !== q) el.textContent = q;
   });
 }
 
 function bloqueSimulacion() {
-  if (!estado.sim) return '';
+  if (estado.sim === null) return '';
   return `
     <div class="sal-ya sereno aviso-sim">
       <div class="t">🕹 MODO SIMULACIÓN</div>
-      <div class="d">Estás viendo la app como si fueran las <b>${fmtHora(estado.sim)}</b> del ${new Date(estado.sim).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })}.
+      <div class="d">Estás viendo la app como si fueran las <b>${fmtHora(ahora())}</b> del ${new Date(ahora()).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })}, y el reloj corre desde ahí.
       <br><button class="btn-linea" style="margin-top:11px" onclick="salirSim()">VOLVER A LA HORA REAL</button></div>
     </div>`;
 }
@@ -1512,7 +1537,7 @@ function cambiarDia(d) {
 function abrirAjustes() {
   const h = $('#hoja');
   const min = SETS[0].from, max = SETS[SETS.length - 1].to;
-  const val = estado.sim ?? Math.max(min, Math.min(max, Date.now()));
+  const val = estado.sim !== null ? ahora() : Math.max(min, Math.min(max, Date.now()));
   $('#hoja-panel').innerHTML = `
     <div class="asa"></div>
     <h3>Ajustes</h3>
@@ -1554,8 +1579,8 @@ function abrirAjustes() {
     guardar(); pintarPlan();
   };
   $('#in-sim').oninput = e => {
-    estado.sim = +e.target.value;
-    $('#val-sim').textContent = fmtHora(estado.sim);
+    estado.sim = +e.target.value - Date.now();   // desfase, para que siga corriendo
+    $('#val-sim').textContent = fmtHora(ahora());
     estado._clave = null;
     pintarAhora(); pintarPlan();
   };
