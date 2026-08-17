@@ -1,7 +1,7 @@
 /* RIVERLAPP — service worker.
    Cachea todo al instalar para que funcione sin cobertura en el recinto. */
 
-const CACHE = 'riverlapp-v16';
+const CACHE = 'riverlapp-v17';
 const BASE = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const BASE = [
   './icono-180.png',
   './icono-192.png',
   './icono-512.png',
+  './icono-512-maskable.png',
   './cabeza.png',
 ];
 
