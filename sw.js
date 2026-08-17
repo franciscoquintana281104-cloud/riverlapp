@@ -1,7 +1,7 @@
 /* RIVERLAPP — service worker.
    Cachea todo al instalar para que funcione sin cobertura en el recinto. */
 
-const CACHE = 'riverlapp-v5';
+const CACHE = 'riverlapp-v6';
 const BASE = [
   './',
   './index.html',
