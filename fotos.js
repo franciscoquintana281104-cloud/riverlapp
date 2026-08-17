@@ -1,14 +1,12 @@
-/* Fotos de artistas — generado por bajar-fotos.py (API pública de Deezer).
+/* Fotos de artistas — generado por bajar-fotos.py y cambiar-foto.py.
    Clave = slug del artista, valor = fichero dentro de artistas/.
-   Los que no están aquí usan su portada generada por código.
-   Para añadir una a mano: mete el archivo en artistas/ y añade la línea. */
+   Los que no están aquí usan su portada generada por código. */
 
 window.FOTOS = {
   "8belial": "8belial.jpg",
   "akriila": "akriila.jpg",
   "aleesha": "aleesha.jpg",
   "amoryodio": "amoryodio.jpg",
-  "anb": "anb.jpg",
   "arcex": "arcex.jpg",
   "bby-demon": "bby-demon.jpg",
   "bea-pelea": "bea-pelea.jpg",
@@ -17,7 +15,6 @@ window.FOTOS = {
   "bluntz-b2b-tasuik": "bluntz-b2b-tasuik.jpg",
   "c-mari": "c-mari.jpg",
   "cecilio-g": "cecilio-g.jpg",
-  "cybernene": "cybernene.jpg",
   "d-palermo": "d-palermo.jpg",
   "d-valentino": "d-valentino.jpg",
   "delarue": "delarue.jpg",

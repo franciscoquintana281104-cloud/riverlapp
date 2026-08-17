@@ -119,6 +119,29 @@ def coincide(cartel, deezer):
     return False
 
 
+def huella(datos):
+    """dHash de 64 bits, para reconocer el avatar genérico de Deezer aunque venga
+    reescalado. Sin esto se cuela como si fuera la foto del artista."""
+    try:
+        im = Image.open(io.BytesIO(datos)).convert("L").resize((9, 8), Image.LANCZOS)
+    except Exception:
+        return None
+    px = list(im.getdata())
+    bits = 0
+    for f in range(8):
+        for c in range(8):
+            if px[f * 9 + c] > px[f * 9 + c + 1]:
+                bits |= 1 << (f * 8 + c)
+    return bits
+
+
+def es_generica(datos, referencia):
+    if referencia is None:
+        return False
+    h = huella(datos)
+    return h is not None and bin(h ^ referencia).count("1") <= 8
+
+
 def descargar(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25, context=CTX) as r:
         return r.read()
@@ -126,6 +149,8 @@ def descargar(url):
 
 def main():
     DESTINO.mkdir(exist_ok=True)
+    ref = RAIZ / "avatar-generico.jpg"
+    generica = huella(ref.read_bytes()) if ref.exists() else None
     nombres = artistas_del_cartel()
     print(f"{len(nombres)} artistas únicos en el cartel\n")
 
@@ -156,7 +181,13 @@ def main():
 
         slug = slugify(nombre)
         try:
-            img = Image.open(io.BytesIO(descargar(elegido["picture_xl"]))).convert("RGB")
+            bruto = descargar(elegido["picture_xl"])
+            if es_generica(bruto, generica):
+                print(f"{etiqueta:<44} avatar genérico, se descarta")
+                sin_foto.append(nombre)
+                time.sleep(.2)
+                continue
+            img = Image.open(io.BytesIO(bruto)).convert("RGB")
             lado = min(img.size)
             izq = (img.width - lado) // 2
             arr = max(0, (img.height - lado) // 4)      # encuadre hacia arriba: ahí está la cara
