@@ -929,9 +929,15 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 #intro {
   position: fixed; inset: 0; z-index: 700;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; padding: 34px;
-  background: var(--ink);
+  gap: clamp(18px, 4.5vh, 40px);
+  text-align: center;
+  padding: calc(env(safe-area-inset-top) + 20px) 22px calc(env(safe-area-inset-bottom) + 20px);
+  background:
+    radial-gradient(120% 60% at 50% -8%, rgba(255,46,154,.12), transparent 62%),
+    var(--ink);
+  overflow: hidden;   /* la escena se sale un pelo por los lados a propósito */
 }
+#intro .intro-top, #intro .intro-bajo { display: contents; }
 #intro.fuera { animation: salirIntro .7s var(--ease-out) forwards; pointer-events: none; }
 @keyframes salirIntro { to { opacity: 0; transform: scale(1.12); } }
 
@@ -943,11 +949,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 @keyframes caerLetra { from { opacity: 0; transform: translateY(-46px) rotate(-14deg) scale(.6); } to { opacity: 1; transform: none; } }
 .logo-riv .hl { color: var(--magenta); }
 
-#intro .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: .34em; color: var(--mute); margin-top: 18px; animation: subeFade .7s .8s both var(--ease-out); }
-#intro .desc { font-size: 14.5px; line-height: 1.55; color: rgba(255,255,255,.72); margin-top: 30px; max-width: 320px; animation: subeFade .7s 1s both var(--ease-out); }
+#intro .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .32em; color: var(--mute-2); margin-top: 14px; margin-bottom: 4px; animation: subeFade .7s .8s both var(--ease-out); }
+#intro .lema {
+  font-family: var(--display); font-weight: 400; text-transform: uppercase;
+  font-size: clamp(27px, 8.4vw, 44px); line-height: .92; letter-spacing: -.045em;
+  animation: subeFade .7s .95s both var(--ease-out);
+}
+#intro .desc {
+  font-family: var(--mono); font-size: 11px; line-height: 1.75; letter-spacing: .1em;
+  color: var(--mute); text-transform: uppercase;
+  animation: subeFade .7s 2.1s both var(--ease-out);
+}
 
 .btn-grande {
-  margin-top: 34px; padding: 17px 40px; border-radius: 3px;
+  margin-top: 0; padding: 17px 40px; border-radius: 3px;
   font-family: var(--mono); font-weight: 700; font-size: 12px; letter-spacing: .2em;
   background: var(--magenta); color: var(--negro);
   transition: transform .3s var(--ease-spring);
@@ -955,7 +970,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .btn-grande:active { transform: scale(.93); }
 .btn-txt {
-  margin-top: 16px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  margin-top: 4px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
   color: var(--mute); animation: subeFade .7s 1.35s both var(--ease-out);
   padding: 10px; text-decoration: underline; text-underline-offset: 4px;
 }
@@ -1121,3 +1136,185 @@ body.arrastrando .carta:last-child .tinte-2 { will-change: opacity; }
 .cabeza-boton.cargando { animation: none; transform: scale(.86) rotate(-2deg); transition: transform .5s var(--ease-out); }
 /* nada de menú de iOS ni selección al mantener pulsado */
 .cabeza-boton { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+
+/* ===========================================================
+   INTRO — los tres pasos
+   Cartel → fichaje → plan, sin llamarlos pasos ni numerarlos. Reutiliza el
+   magenta de la carta, la mono espaciada de las etiquetas y las mismas curvas
+   que el resto: tenía que parecer que siempre estuvo aquí.
+   =========================================================== */
+
+.escena {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(6px, 2.2vw, 16px);
+  width: 100%; max-width: 460px;
+  animation: subeFade .8s 1.25s both var(--ease-out);
+}
+
+.paso {
+  position: relative; flex: 1 1 0; min-width: 0;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px; border: 1px solid var(--line);
+  background: var(--ink-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 6px;
+  /* ligeramente descuadradas, como fotos tiradas sobre una mesa */
+  animation: respiraPaso 6s var(--ease-out) infinite;
+}
+.paso.p1 { transform: rotate(-3.5deg); animation-delay: 0s; }
+.paso.p2 { transform: rotate(2deg);  animation-delay: 2s;
+  background: var(--magenta); border-color: var(--magenta); color: var(--negro);
+  box-shadow: 0 14px 34px rgba(255,46,154,.22);
+}
+.paso.p3 { transform: rotate(-2deg); animation-delay: 4s; }
+
+/* el que toca en cada momento se levanta un poco; nada de saltos */
+@keyframes respiraPaso {
+  0%, 100% { filter: none; }
+  4%       { filter: brightness(1.35); }
+  30%      { filter: none; }
+}
+
+.paso-num {
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(26px, 8vw, 40px); line-height: .9; letter-spacing: -.05em;
+}
+.paso-lbl {
+  font-family: var(--mono); font-size: clamp(7px, 2.1vw, 9px);
+  letter-spacing: .18em; text-transform: uppercase; color: var(--mute);
+}
+.paso.p2 .paso-lbl { color: var(--negro); }
+.paso-lbl.fuerte { font-weight: 700; letter-spacing: .1em; }
+.paso-pie {
+  font-family: var(--mono); font-size: clamp(6px, 1.8vw, 7.5px);
+  letter-spacing: .2em; text-transform: uppercase; color: var(--mute-2);
+}
+.paso.p2 .paso-pie { color: rgba(10,10,12,.6); }
+
+/* 1 — la pila del cartel: tres cartas insinuadas */
+.mini-pila { position: relative; width: 46%; aspect-ratio: 3/4; margin-bottom: 5px; }
+.mini-pila i {
+  position: absolute; inset: 0; border-radius: 2px;
+  background: var(--magenta); opacity: .28;
+}
+.mini-pila i:nth-child(1) { transform: rotate(-9deg) translateY(2px); }
+.mini-pila i:nth-child(2) { transform: rotate(5deg); opacity: .5; }
+.mini-pila i:nth-child(3) { transform: none; opacity: .95; }
+
+/* 2 — el sello del match, con el mismo golpe que el de la carta real */
+.paso-sello {
+  font-size: clamp(20px, 6.5vw, 30px); line-height: 1; color: var(--negro);
+  animation: golpeSello 6s var(--ease-out) infinite; animation-delay: 2s;
+}
+@keyframes golpeSello {
+  0%, 30%, 100% { transform: scale(1) rotate(0); }
+  6%            { transform: scale(1.5) rotate(-14deg); }
+  14%           { transform: scale(1) rotate(0); }
+}
+
+/* 3 — el plan montado: dos artistas, una pausa, otro artista */
+.mini-plan { width: 68%; display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.mini-plan i {
+  display: block; height: 4px; border-radius: 1px; transform-origin: left center;
+  animation: entraLinea 6s var(--ease-out) infinite;
+}
+.mini-plan i.s { background: var(--magenta); }
+.mini-plan i.p { background: var(--mute-2); width: 62%; }  /* la pausa, más corta */
+.mini-plan i:nth-child(1) { animation-delay: 4.0s; }
+.mini-plan i:nth-child(2) { animation-delay: 4.15s; }
+.mini-plan i:nth-child(3) { animation-delay: 4.3s; }
+.mini-plan i:nth-child(4) { animation-delay: 4.45s; }
+@keyframes entraLinea {
+  0%   { transform: scaleX(0); opacity: 0; }
+  8%   { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+/* las flechas que unen los tres */
+.flecha {
+  flex: 0 0 auto; width: clamp(10px, 3.4vw, 20px); height: 1px;
+  background: var(--line); position: relative;
+}
+.flecha::after {
+  content: ''; position: absolute; right: -1px; top: -2px;
+  border-left: 4px solid var(--mute-2); border-top: 2.5px solid transparent; border-bottom: 2.5px solid transparent;
+}
+/* un pulso magenta recorre la flecha cuando le toca */
+.flecha::before {
+  content: ''; position: absolute; inset: 0; background: var(--magenta);
+  transform-origin: left center; transform: scaleX(0);
+  animation: pulsoFlecha 6s var(--ease-out) infinite;
+}
+.flecha.f1::before { animation-delay: 1.5s; }
+.flecha.f2::before { animation-delay: 3.5s; }
+@keyframes pulsoFlecha {
+  0%, 100% { transform: scaleX(0); opacity: 0; }
+  4%       { transform: scaleX(1); opacity: 1; }
+  16%      { transform: scaleX(1); opacity: 0; }
+}
+
+/* La carta que hace el recorrido entero: sale del cartel, se mete en FICHAR
+   (ahí es el sello el que habla) y reaparece para caer aplastada como una línea
+   dentro de MI PLAN. Es la que hace entender de qué va la app sin leer nada.
+
+   Solo cruza los HUECOS entre tarjetas y se funde al entrar en cada una: si se
+   posaba encima, tapaba el "ME RENTA" y no se entendía nada. */
+.viajera {
+  position: absolute; top: 50%; z-index: 2;
+  width: 12%; aspect-ratio: 3/4; border-radius: 2px;
+  background: var(--magenta);
+  /* el cerco oscuro la recorta del fondo: sobre la tarjeta magenta de FICHAR
+     se fundía con ella y parecía un bulto, no una carta viajando */
+  box-shadow: 0 0 0 2.5px var(--ink), 0 10px 24px rgba(0,0,0,.55);
+  pointer-events: none; opacity: 0;
+  animation: viaja 6s var(--ease-out) infinite;
+}
+/* la rayita del nombre, para que se lea como una carta de artista en pequeño */
+.viajera::after {
+  content: ''; position: absolute; left: 14%; right: 34%; bottom: 16%;
+  height: 9%; border-radius: 1px; background: var(--negro); opacity: .55;
+}
+.paso { z-index: 1; }
+
+@keyframes viaja {
+  /* sale del cartel */
+  0%   { left: 20%; opacity: 0; transform: translateY(-50%) rotate(-10deg) scale(.75); }
+  8%   { left: 22%; opacity: 1; transform: translateY(-50%) rotate(-8deg) scale(1); }
+  /* la lanza por encima: por el hueco no cabía y no se veía viajar */
+  17%  { left: 31%; opacity: 1; transform: translateY(-155%) rotate(-12deg) scale(1); }
+  27%  { left: 42%; opacity: 1; transform: translateY(-155%) rotate(10deg) scale(1); }
+  /* cae dentro de FICHAR: a partir de aquí habla el sello */
+  34%  { left: 47%; opacity: 0; transform: translateY(-50%) rotate(4deg) scale(.8); }
+  50%  { left: 58%; opacity: 0; transform: translateY(-50%) rotate(0) scale(.8); }
+  /* ya fichada, sale hacia el plan */
+  56%  { left: 60%; opacity: 1; transform: translateY(-50%) rotate(-6deg) scale(1); }
+  64%  { left: 68%; opacity: 1; transform: translateY(-155%) rotate(-8deg) scale(1); }
+  73%  { left: 77%; opacity: 1; transform: translateY(-155%) rotate(6deg) scale(1); }
+  /* y aterriza aplastada, convertida en una línea del horario */
+  81%  { left: 80%; opacity: .95; transform: translateY(-50%) rotate(0) scale(1.15, .1); }
+  88%  { left: 80%; opacity: 0; transform: translateY(-50%) rotate(0) scale(1.15, .1); }
+  100% { left: 20%; opacity: 0; transform: translateY(-50%) rotate(-10deg) scale(.75); }
+}
+
+.flecha-cta { display: inline-block; animation: empujaCta 2.4s var(--ease-out) infinite; }
+@keyframes empujaCta { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
+
+/* pantallas altas: la escena puede permitirse más tamaño */
+@media (min-height: 780px) { .escena { max-width: 500px; } }
+/* en escritorio la escena es el centro de la pantalla: que se vea */
+@media (min-width: 700px) {
+  .escena { max-width: 580px; gap: 20px; }
+  #intro { gap: clamp(22px, 3.6vh, 34px); }
+  .paso-num { font-size: 46px; }
+  .paso-lbl { font-size: 10px; }
+  .paso-pie { font-size: 8.5px; }
+  #intro .desc { font-size: 12.5px; }
+}
+
+/* si el sistema pide menos movimiento, se queda todo quieto y legible */
+@media (prefers-reduced-motion: reduce) {
+  .paso, .paso-sello, .mini-plan i, .flecha::before, .viajera, .flecha-cta { animation: none; }
+  .viajera { opacity: 0; }
+  .mini-plan i { transform: none; opacity: 1; }
+}
