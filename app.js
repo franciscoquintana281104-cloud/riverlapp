@@ -1782,7 +1782,9 @@ function iniciar() {
     estado.intro = false; guardar();
     $('#intro').classList.add('fuera');
     setTimeout(() => $('#intro').remove(), 700);
-    irA(Object.keys(estado.prefs).length ? 'ahora' : 'fichar');
+    // siempre a FICHAR: es lo que pone el botón. Antes, si ya tenías fichajes
+    // te mandaba a AHORA y parecía que el botón no hacía lo que decía.
+    irA('fichar');
   };
   $('#btn-saltar').onclick = () => {
     estado.intro = false; guardar();
