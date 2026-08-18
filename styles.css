@@ -676,15 +676,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .fila-acc { margin-top: 14px; }
 
-.aviso-prueba {
-  margin-top: 16px; padding: 15px 16px; border-radius: 16px;
-  background: rgba(53,232,255,.08); border: 1px solid rgba(53,232,255,.35);
-}
+/* El aviso de apuntes fuera de fecha. Era una caja cian y desentonaba con el
+   resto: ahora se lee como una página más, con el magenta solo en el rótulo. */
+.aviso-prueba { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
 .aviso-prueba .t {
-  font-family: var(--mono); font-weight: 700; font-size: 12px;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--cyan);
+  font-family: var(--mono); font-weight: 400; font-size: 10px;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--magenta);
 }
-.aviso-prueba .d { font-size: 12.5px; color: rgba(255,255,255,.72); margin: 8px 0 12px; line-height: 1.45; }
+.aviso-prueba .d { font-size: 12.5px; color: var(--mute); margin: 8px 0 12px; line-height: 1.45; }
 
 /* destello al apuntar */
 .destello {
@@ -996,6 +995,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .btn-linea:active { transform: scale(.97); }
 .btn-linea.peligro { color: var(--raya); border-color: rgba(255,59,87,.4); }
+/* negro y rosa: el trazo y la letra en magenta sobre el negro de la app */
+.btn-linea.rosa {
+  background: var(--ink); color: var(--magenta);
+  border-color: rgba(255,46,154,.45);
+}
+.btn-linea.rosa:active { background: rgba(255,46,154,.1); }
+/* cuando va suelto arriba del contador, separado de lo que viene debajo */
+#contador-cont > .btn-linea.rosa { margin-bottom: 20px; }
 
 .version {
   margin-top: 20px; text-align: center;

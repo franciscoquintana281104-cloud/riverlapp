@@ -111,9 +111,16 @@ Cada apunte se sella con **el artista que sonaba en ese momento**, y de ahí sal
 todas las estadísticas. El ritmo medio y la racha se calculan **por noche**: de
 punta a punta metían en la media las horas de sueño entre días.
 
-Antes de que arranque el festival todo cuenta bajo un **modo prueba** explícito;
-al empezar el viernes esos apuntes pasan a descartados solos. Filtrarlos desde el
-principio hacía que pulsar un botón no moviera el número y pareciera roto.
+Antes de que arranque el festival todo cuenta bajo un **modo prueba**; al empezar
+el viernes esos apuntes pasan a descartados solos. Filtrarlos desde el principio
+hacía que pulsar un botón no moviera el número y pareciera roto.
+
+El cartel que explicaba todo esto **se quitó a petición de Fran** ("ensucia"): de
+él solo queda el botón BORRAR EL ENSAYO, en negro y magenta. La explicación vive
+ahora únicamente en el LEEME, así que la app ya no avisa por su cuenta de que
+esos apuntes dejarán de contar. **No volver a meter cajas de color** ahí: el
+aviso de apuntes fuera de fecha también era una caja cian y se pasó a la misma
+estética de página.
 
 ---
 

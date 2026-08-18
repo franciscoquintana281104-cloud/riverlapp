@@ -1059,17 +1059,10 @@ function pintarContador() {
 
   let html = '';
 
-  if (e.pruebas) {
-    html += `
-      <div class="aviso-prueba">
-        <div class="t">🕹 Modo prueba</div>
-        <div class="d">El festival aún no ha empezado, así que esto es un ensayo:
-        los botones suman y puedes ver el wrapped, pero <b>el viernes estos apuntes
-        dejarán de contar solos</b>.<br><br>
-        Para probarlo con conciertos de verdad, entra en ⚙ y mueve el
-        <b>modo simulación</b> a una hora del festival.</div>
-        ${e.total ? `<button class="btn-linea" onclick="borrarRegistro()">BORRAR EL ENSAYO</button>` : ''}
-      </div>`;
+  // Antes aquí había un cartel explicando el modo prueba. Fran lo quitó porque
+  // ensuciaba: queda solo el botón, y solo si hay algo que borrar.
+  if (e.pruebas && e.total) {
+    html += `<button class="btn-linea rosa" onclick="borrarRegistro()">BORRAR EL ENSAYO</button>`;
   }
 
   html += `
@@ -1104,8 +1097,8 @@ function pintarContador() {
       <div class="aviso-prueba">
         <div class="t">${e.fuera} apunte${e.fuera === 1 ? '' : 's'} de prueba</div>
         <div class="d">Están fuera de las fechas del festival, así que no cuentan en
-        las estadísticas ni en el wrapped. Bórralos antes del viernes.</div>
-        <button class="btn-linea" onclick="limpiarPruebas()">BORRAR LAS PRUEBAS</button>
+        las estadísticas ni en el wrapped.</div>
+        <button class="btn-linea rosa" onclick="limpiarPruebas()">BORRAR LAS PRUEBAS</button>
       </div>`;
   }
 
