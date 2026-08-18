@@ -66,7 +66,21 @@ encima de la que entra**: se quedaba visible a un lado durante todo el
 deslizamiento. Además cada vista es **opaca** (lleva su propio degradado); antes
 eran transparentes y se veían la una a través de la otra.
 
-### El service worker se instala entero o no se activa
+### El service worker va en DOS cachés, y el código entero o nada
+El núcleo (`riverlapp-vN`) y las fotos (`riverlapp-fotos`) van separados. Con una
+sola caché, **cada publicación re-descargaba los 5 MB de fotos** junto al código;
+como la instalación es todo o nada, en el móvil no llegaba a terminar y te
+quedabas con la versión vieja sin enterarte de nada. Ahora el código pesa ~700 KB
+y entra a la primera; las fotos se quedan donde están y **solo se rehacen si
+sube `FOTOS_REV`** (súbelo al cambiar fotos de `artistas/`). La caché de fotos
+**no se borra nunca** en el paso de activación, y un fallo bajando fotos ya no
+tumba la actualización del código.
+
+El registro va con `updateViaCache: 'none'`: sin eso el navegador se queda con su
+copia de `sw.js` hasta 10 minutos (GitHub Pages lo sirve con `max-age=600`) y una
+publicación tardaba en verse aunque ya estuviera arriba.
+
+### El núcleo se instala entero o no se activa
 Si falla un fichero del núcleo, o más del 15% de las fotos, la instalación
 **falla a propósito** y se conserva la versión anterior. Con `Promise.allSettled`
 una instalación a medias se daba por buena y el paso de activación borraba la

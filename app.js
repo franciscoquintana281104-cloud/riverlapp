@@ -1812,7 +1812,17 @@ function iniciar() {
   const esLocal = ['localhost', '127.0.0.1'].includes(location.hostname)
     && !location.search.includes('sw=1');
   if ('serviceWorker' in navigator && !esLocal) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    /* updateViaCache 'none': sin esto el navegador se queda con su copia de
+       sw.js hasta 10 minutos (GitHub Pages lo sirve con max-age=600) y una
+       publicación podía tardar en verse aunque ya estuviera arriba. */
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(reg => {
+        reg.update().catch(() => {});
+        // completar las fotos que falten, sin bloquear el arranque
+        const sw = reg.active || navigator.serviceWorker.controller;
+        if (sw) sw.postMessage('fotos');
+      })
+      .catch(() => {});
   }
 }
 

@@ -1,7 +1,16 @@
 /* RIVERLAPP — service worker.
-   Cachea todo al instalar para que funcione sin cobertura en el recinto. */
+   Cachea todo al instalar para que funcione sin cobertura en el recinto.
 
-const CACHE = 'riverlapp-v25';
+   Van en DOS cachés a propósito. Con una sola, cada publicación re-descargaba
+   los 5 MB de fotos junto al código, y como la instalación es todo o nada, en
+   el móvil no llegaba a terminar nunca: te quedabas con la versión vieja sin
+   enterarte. Ahora el código pesa ~700 KB y entra a la primera; las fotos se
+   quedan donde están y solo se rehacen si sube FOTOS_REV. */
+
+const CACHE = 'riverlapp-v26';
+const CACHE_FOTOS = 'riverlapp-fotos';
+/* Súbelo SOLO cuando cambien las fotos de artistas/: obliga a rehacerlas. */
+const FOTOS_REV = 2;
 const BASE = [
   './',
   './index.html',
@@ -47,24 +56,49 @@ self.addEventListener('install', e => {
     // el núcleo de la app es obligatorio: si cae uno, se aborta
     await Promise.all(BASE.map(u => c.add(u)));
 
-    // las fotos son prescindibles de una en una, pero no a montones
-    const fotos = await fotosDelCartel();
-    const res = await Promise.allSettled(fotos.map(u => c.add(u)));
-    const fallos = res.filter(r => r.status === 'rejected').length;
-    if (fotos.length && fallos > fotos.length * 0.15) {
-      throw new Error(
-        `${fallos}/${fotos.length} fotos sin cachear: se conserva la versión anterior`
-      );
-    }
-
+    // A partir de aquí la app ya está actualizada. Las fotos van en su propia
+    // caché y NO pueden tumbar la instalación: si fallan, se conservan las que
+    // ya hubiera y se reintenta al abrir la próxima vez. Antes un mal momento
+    // de cobertura dejaba el código viejo también.
     await self.skipWaiting();
+    await ponerFotosAlDia();
   })());
+});
+
+/* Descarga solo las fotos que falten. Si FOTOS_REV ha subido, empieza de cero:
+   es la única forma de traerse una foto que ha cambiado sin cambiar de nombre. */
+async function ponerFotosAlDia() {
+  try {
+    const c = await caches.open(CACHE_FOTOS);
+    const marca = './__rev';
+    const previa = await c.match(marca);
+    if (!previa || +(await previa.text()) !== FOTOS_REV) {
+      await caches.delete(CACHE_FOTOS);
+    }
+    const cache = await caches.open(CACHE_FOTOS);
+    const fotos = await fotosDelCartel();
+    const faltan = [];
+    for (const u of fotos) if (!(await cache.match(u))) faltan.push(u);
+
+    const res = await Promise.allSettled(faltan.map(u => cache.add(u)));
+    const fallos = res.filter(r => r.status === 'rejected').length;
+    // la marca solo se pone si están TODAS: si no, se reintenta la próxima vez
+    if (!fallos) await cache.put(marca, new Response(String(FOTOS_REV)));
+  } catch (_) {
+    /* sin red: se queda como esté y se reintenta al abrir */
+  }
+}
+
+/* Al abrir la app se completan las que falten, sin bloquear nada. */
+self.addEventListener('message', e => {
+  if (e.data === 'fotos') e.waitUntil(ponerFotosAlDia());
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      /* nunca se borra la de fotos: es la que evita volver a bajar los 5 MB */
+      .then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== CACHE_FOTOS).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -78,7 +112,7 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const hit = await cache.match(e.request);
+    const hit = await cache.match(e.request) || await (await caches.open(CACHE_FOTOS)).match(e.request);
     if (hit) return hit;
 
     // algo que no estaba precacheado (una foto añadida a mano, por ejemplo)
