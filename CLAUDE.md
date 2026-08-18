@@ -149,6 +149,15 @@ Playboy). **No "corregirlas".**
   VER MI WRAPPED, BORRAR EL REGISTRO y la tarjeta de OTRA SUSTANCIA según por
   dónde fueras. Antes de ser botón derivaba por la pantalla por detrás del
   contenido, porque encima tapaba los números.
+- El **QR de compartir** (mantener pulsada la cabeza) es un **SVG generado a
+  fichero** por `hacer-qr.py`, no dibujado en el móvil: la dirección no cambia
+  nunca, así no entra una librería en una app que presume de no tener ninguna, y
+  funciona sin cobertura. Va con corrección **H** y sobre **fondo claro**: sobre
+  el negro de la app no lo lee ninguna cámara. `hacer-qr.py` necesita `segno`,
+  que no hace falta instalar en el sistema (basta un venv de usar y tirar).
+- La cabeza distingue toque corto (eructo) de **toque largo** (QR) con eventos de
+  puntero, no con `onclick`: el click salta igual al soltar y te eructaba encima
+  del QR recién abierto.
 - Los eructos van en **AAC mono** (`hacer-eructos.py` los saca de los WAV): en
   WAV eran 2 MB que había que precachear enteros para el modo sin cobertura.
   Se les recorta el silencio de los extremos, que retrasaba el sonido respecto

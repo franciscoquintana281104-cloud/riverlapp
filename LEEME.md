@@ -40,7 +40,9 @@ que se pasa tocando.
 
 La **cabeza** de la esquina de arriba es un botón: cada toque suelta uno de los
 cinco eructos, nunca el mismo dos veces seguidas. Ojo, en el iPhone el
-interruptor de silencio los calla.
+interruptor de silencio los calla. Si la **mantienes pulsada** sale un QR para
+pasarle la app a quien quieras: al apuntarle con la cámara se abre en el
+navegador, y desde Compartir → Añadir a pantalla de inicio les queda instalada.
 
 **Modo prueba**: antes de que empiece el festival todo suma con normalidad, para
 que puedas ensayar y ver el wrapped. En cuanto arranque el viernes, esos apuntes
@@ -82,6 +84,8 @@ de colores ni degradados: el plan se lee como una página.
     audio/              los cinco eructos de la cabeza (AAC)
     audio/origen/       sus WAV originales, solo para regenerarlos
     hacer-eructos.py    convierte los WAV a AAC, los recorta e iguala
+    qr-riverlapp.svg    el QR para compartir la app
+    hacer-qr.py         lo regenera (necesita segno en un venv)
     cabeza.png          la cara del icono de EL DAÑO
     hacer-cabeza.py     recorta una cara sobre fondo blanco y genera cabeza.png
 

@@ -1671,6 +1671,63 @@ function eructar() {
   if (p) p.catch(() => {});
 }
 
+/* ===========================================================
+   COMPARTIR — QR al mantener pulsada la cabeza
+   =========================================================== */
+
+const URL_APP = 'https://franciscoquintana281104-cloud.github.io/riverlapp/';
+const MS_LARGO = 500;          // a partir de aquí ya no es un toque, es mantener
+
+function abrirQR() {
+  $('#qr-url').textContent = URL_APP.replace(/^https:\/\//, '');
+  $('#hoja-qr').classList.add('on');
+}
+function cerrarQR() { $('#hoja-qr').classList.remove('on'); }
+
+/* Toque corto eructa, toque largo saca el QR.
+
+   Va con eventos de puntero y no con onclick porque el click salta igual
+   después de mantener pulsado: al soltar te habría eructado encima del QR
+   recién abierto. Aquí el toque largo marca la bandera y el soltar la mira. */
+function montarCabeza() {
+  const btn = $('#cabeza-boton');
+  let temporizador = null, fueLargo = false;
+
+  const soltar = () => {
+    clearTimeout(temporizador);
+    temporizador = null;
+    btn.classList.remove('cargando');
+  };
+
+  btn.addEventListener('pointerdown', e => {
+    if (e.button) return;                       // solo el principal
+    fueLargo = false;
+    btn.classList.add('cargando');
+    temporizador = setTimeout(() => {
+      fueLargo = true;
+      soltar();
+      if (navigator.vibrate) navigator.vibrate(18);   // en iOS no existe
+      abrirQR();
+    }, MS_LARGO);
+  });
+
+  btn.addEventListener('pointerup', () => {
+    const habiaTemporizador = temporizador !== null;
+    soltar();
+    if (!fueLargo && habiaTemporizador) eructar();
+  });
+
+  // si te sales del botón o el sistema se queda el gesto, no cuenta
+  btn.addEventListener('pointercancel', soltar);
+  btn.addEventListener('pointerleave', soltar);
+  // el menú de iOS al mantener pulsado se comería el gesto
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+
+  btn.addEventListener('animationend', e => {
+    if (e.animationName === 'eructa') btn.classList.remove('eructando');
+  });
+}
+
 function animarLogo() {
   const cont = $('#logo-anim');
   const txt = 'RIVERLAPP';
@@ -1700,13 +1757,32 @@ function iniciar() {
   $('#btn-si').onclick     = () => decidir(1);
   $('#btn-top').onclick    = () => decidir(2);
   $('#btn-rewind').onclick = rewind;
-  $('#cabeza-boton').onclick = eructar;
-  $('#cabeza-boton').addEventListener('animationend', e => {
-    if (e.animationName === 'eructa') e.target.classList.remove('eructando');
-  });
+  montarCabeza();
   $$('.btn-ajustes').forEach(b => b.onclick = abrirAjustes);
   $('#hoja').onclick = e => { if (e.target.id === 'hoja') cerrarHoja(); };
   $('#hoja-sus').onclick = e => { if (e.target.id === 'hoja-sus') e.currentTarget.classList.remove('on'); };
+  $('#hoja-qr').onclick = e => { if (e.target.id === 'hoja-qr') cerrarQR(); };
+  $('#qr-cerrar').onclick = cerrarQR;
+  $('#qr-copiar').onclick = async e => {
+    try {
+      await navigator.clipboard.writeText(URL_APP);
+      e.target.textContent = 'COPIADO ✓';
+      setTimeout(() => { e.target.textContent = 'COPIAR ENLACE'; }, 1600);
+    } catch (_) {
+      e.target.textContent = 'NO SE PUDO';   // sin permiso o sin https
+      setTimeout(() => { e.target.textContent = 'COPIAR ENLACE'; }, 1600);
+    }
+  };
+  // el compartir nativo solo existe en móvil: si no está, se queda oculto
+  if (navigator.share) {
+    const bc = $('#qr-compartir');
+    bc.hidden = false;
+    bc.onclick = () => navigator.share({
+      title: 'RIVERLAPP',
+      text: 'El horario de Riverland montado a tu medida',
+      url: URL_APP,
+    }).catch(() => {});
+  }
   cambiarModoPlan(estado.modoPlan);
 
   $('#btn-empezar').onclick = () => {
