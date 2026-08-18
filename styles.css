@@ -406,7 +406,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .anillo {
   position: relative; width: 100%; aspect-ratio: 1;
-  max-width: 232px; margin: 6px auto 26px;
+  max-width: 232px; margin: 26px auto 26px;   /* mismo aire arriba que abajo */
   border-radius: 50%;
   background: conic-gradient(from -90deg, var(--magenta) var(--deg, 0deg), rgba(242,240,238,.1) var(--deg, 0deg) 360deg);
   display: grid; place-items: center;
