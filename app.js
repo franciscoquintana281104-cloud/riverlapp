@@ -1699,7 +1699,7 @@ function montarCabeza() {
     temporizador = setTimeout(() => {
       fueLargo = true;
       soltar();
-      if (navigator.vibrate) navigator.vibrate(18);   // en iOS no existe
+      try { navigator.vibrate && navigator.vibrate(18); } catch (_) {}  // en iOS no existe
       abrirQR();
     }, MS_LARGO);
   });
@@ -1791,9 +1791,11 @@ function iniciar() {
     irA('plan');
   };
 
-  if (!estado.intro) $('#intro').remove();
+  // ?intro=1 la fuerza, para poder verla sin borrar tus fichajes
+  const verIntro = estado.intro || location.search.includes('intro=1');
+  if (!verIntro) $('#intro').remove();
 
-  irA(estado.intro ? 'fichar' : (Object.keys(estado.prefs).length ? 'ahora' : 'fichar'));
+  irA(verIntro ? 'fichar' : (Object.keys(estado.prefs).length ? 'ahora' : 'fichar'));
   pintarPila(); pintarPlan(); pintarCartel(); pintarAhora(); pintarContador();
 
   // reloj: el segundero solo mueve números; el resto se refresca despacio

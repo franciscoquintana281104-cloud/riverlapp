@@ -28,11 +28,45 @@
 
 <!-- ===== INTRO ===== -->
 <div id="intro">
-  <div class="logo-riv" id="logo-anim"></div>
-  <div class="tag">RIVERLAND · ASTURIAS · 2026</div>
-  <div class="desc">Ficha a los artistas como si fuera Tinder y te monto el horario de los tres días. Con pausas incluidas.</div>
-  <button class="btn-grande" id="btn-empezar">EMPEZAR A FICHAR</button>
-  <button class="btn-txt" id="btn-saltar">Ya lo tengo hecho, llévame al plan</button>
+  <div class="intro-top">
+    <div class="logo-riv" id="logo-anim"></div>
+    <div class="tag">RIVERLAND · ASTURIAS · 2026</div>
+    <div class="lema">TU RIVERLAND.<br>A TU MANERA.</div>
+  </div>
+
+  <!-- Los tres pasos, sin decir en ningún sitio que son pasos: el cartel,
+       el fichaje y el plan. La carta viajera los recorre en bucle. -->
+  <div class="escena" aria-hidden="true">
+    <div class="paso p1">
+      <div class="mini-pila"><i></i><i></i><i></i></div>
+      <div class="paso-num">83</div>
+      <div class="paso-lbl">ARTISTAS</div>
+    </div>
+
+    <div class="flecha f1"></div>
+
+    <div class="paso p2">
+      <div class="paso-sello">★</div>
+      <div class="paso-lbl fuerte">ME RENTA</div>
+      <div class="paso-pie">FICHAR</div>
+    </div>
+
+    <div class="flecha f2"></div>
+
+    <div class="paso p3">
+      <div class="mini-plan"><i class="s"></i><i class="p"></i><i class="s"></i><i class="s"></i></div>
+      <div class="paso-lbl">MI PLAN</div>
+      <div class="paso-pie">7 + 3 PAUSAS</div>
+    </div>
+
+    <div class="viajera"></div>
+  </div>
+
+  <div class="intro-bajo">
+    <div class="desc">Fichas lo que quieres ver.<br>Nosotros hacemos el resto.</div>
+    <button class="btn-grande" id="btn-empezar">EMPEZAR A FICHAR <span class="flecha-cta">→</span></button>
+    <button class="btn-txt" id="btn-saltar">Ya lo tengo hecho, llévame al plan</button>
+  </div>
 </div>
 
 <div id="app">
