@@ -649,7 +649,7 @@ function pintarAhora() {
     html += n
       ? `<div class="sal-ya sereno">
            <div class="t">PLAN LISTO</div>
-           <div class="d">Llevas <b>${n}</b> artistas fichados. Cuando abran puertas esta pantalla se convierte en tu copiloto.</div>
+           <div class="d">Llevas <b>${n}</b> artista${n === 1 ? '' : 's'} fichado${n === 1 ? '' : 's'}. Cuando abran puertas esta pantalla se convierte en tu copiloto.</div>
          </div>`
       : `<div class="sal-ya sereno">
            <div class="t">TE FALTA FICHAR</div>
@@ -669,7 +669,7 @@ function pintarAhora() {
       <div class="vacio">
         <div class="ic">🌅</div>
         <div class="t">Se acabó Riverland</div>
-        <div class="d">Tenías <b>${vistos}</b> artistas en el plan.<br>Ahora toca dormir tres días seguidos.</div>
+        <div class="d">Tenías <b>${vistos}</b> artista${vistos === 1 ? '' : 's'} en el plan.<br>Ahora toca dormir tres días seguidos.</div>
       </div>` + bloqueSimulacion();
     cont.innerHTML = html;
     estado._clave = claveAhora(t);
@@ -700,10 +700,30 @@ function pintarAhora() {
           ${estado.prefs[actual.id] === 2 ? `<span class="chip sagrado">★ SÍ O SÍ</span>` : ''}
         </div>
       </div>`;
+  } else if (!siguiente) {
+    /* No queda nada por delante en tu plan. Antes esto pintaba el anillo de
+       pausa con un 00:00 y la palabra "Descanso": parecía la app colgada.
+       A esa hora lo único que sirve es qué se está tocando ahora mismo. */
+    const fichados = Object.values(estado.prefs).filter(v => v >= 1).length;
+    const proximo = SETS.find(s => s.from > t);
+    html += `
+      <div class="ahora-hero" style="text-align:center">
+        <div class="eyebrow">${fichados ? 'SE TE ACABÓ EL PLAN' : 'NO TIENES PLAN'}</div>
+        <div class="ahora-nom">${fichados ? 'A PARTIR DE AQUÍ,<br>IMPROVISAS' : 'NO HAS FICHADO<br>A NADIE'}</div>
+      </div>
+      <div class="sal-ya sereno">
+        <div class="t">${fichados ? 'YA HAS VISTO TODO LO TUYO' : 'TE FALTA FICHAR'}</div>
+        <div class="d">${fichados
+          ? 'No te queda nada fichado por delante.'
+          : 'Todavía no has dicho a quién quieres ver. Dale a <b>FICHAR</b> y desliza el cartel.'}
+          ${proximo
+            ? ` El cartel sigue a las <b>${proximo.start}</b> con ${proximo.name} en ${proximo.stageName}.`
+            : ''}</div>
+      </div>`;
   } else {
     const m = medidaAhora(t);
     const c = fmtCuenta(m.restante);
-    const pausaMsg = siguiente ? mensajePausa(Math.round((siguiente.from - t) / 60000), siguiente.from) : 'Descanso';
+    const pausaMsg = mensajePausa(Math.round((siguiente.from - t) / 60000), siguiente.from);
     html += `
       <div class="ahora-hero" style="text-align:center">
         <div class="eyebrow">PAUSA · EMPIEZA EN</div>
@@ -797,12 +817,36 @@ function medidaAhora(t) {
     return { fase: 'set', actual, siguiente,
              restante: actual.to - t, total: actual.to - actual.from };
   }
-  // en una pausa el anillo mide lo que queda de pausa
   const previo = [...plan].reverse().find(s => s.to <= t);
-  const desde = previo ? previo.to : t;
+
+  /* Sin nada por delante en el plan no hay cuenta atrás que medir. Antes esto
+     caía en la rama de pausa con restante 0 y total 1: el anillo se quedaba
+     vacío con un 00:00 clavado, que es justo lo que pasa cada noche en cuanto
+     se acaba lo último que fichaste. Ahora tiene fase propia y AHORA pinta
+     otra cosa. */
+  if (!siguiente) return { fase: 'libre', previo };
+
+  // en una pausa el anillo mide lo que queda de pausa
+  /* `desde` valía t cuando aún no había empezado nada tuyo, y t se mueve con
+     el reloj: restante y total salían idénticos y el arco se quedaba clavado
+     al 100% durante horas. Se ancla a la apertura del día, que es cuando de
+     verdad empezó la espera. */
+  const desde = previo ? previo.to : aperturaDe(t);
   return { fase: 'pausa', siguiente, previo,
-           restante: siguiente ? siguiente.from - t : 0,
-           total: siguiente ? Math.max(60000, siguiente.from - desde) : 1 };
+           restante: siguiente.from - t,
+           total: Math.max(60000, siguiente.from - desde) };
+}
+
+/* La apertura de la jornada en curso: el primer set del último día que ya ha
+   arrancado. SETS va ordenado por hora, así que el primero de cada día es el
+   que abre. */
+function aperturaDe(t) {
+  let ap = SETS[0].from;
+  FEST.days.forEach(d => {
+    const primero = SETS.find(s => s.day === d.id);
+    if (primero && primero.from <= t) ap = primero.from;
+  });
+  return ap;
 }
 
 /* Grados del arco que SIGUE encendido: empieza en 360 y se va cerrando. */
@@ -835,7 +879,7 @@ function latido() {
 
   // la misma medida que usa la pantalla, para que no puedan discrepar
   const m = medidaAhora(t);
-  if (m.fase !== 'despues') {
+  if (m.fase !== 'despues' && m.fase !== 'libre') {
     const c = fmtCuenta(m.restante);
     const g = $('#cd-grande'), pie = $('#cd-pie'), anillo = $('#anillo');
     if (g && g.innerHTML !== c.grande) g.innerHTML = c.grande;
@@ -885,6 +929,14 @@ const TIPOS_FIJOS = {
 };
 
 const SUGERENCIAS = ['MDMA', 'Speed', 'Keta', 'Tussi', 'Coca', 'Birra', 'Chupito'];
+
+/* El nombre de las sustancias lo escribe Fran a mano. Con una comilla doble
+   se partía el atributo onclick y el botón dejaba de responder al toque sin
+   decir nada; con un < se colaba HTML en la etiqueta. `esc` vale para texto y
+   `escJs` mete el valor dentro de un onclick sin poder romperlo. */
+const esc = t => String(t).replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const escJs = t => esc(JSON.stringify(String(t)));
 
 function infoTipo(t) {
   if (TIPOS_FIJOS[t]) return TIPOS_FIJOS[t];
@@ -940,7 +992,7 @@ function destello(info, s) {
   const d = document.createElement('div');
   d.className = 'destello';
   d.innerHTML = `<div class="ic">${htmlIcono(info)}</div>
-    <div class="tx">+1 ${info.sing}</div>
+    <div class="tx">+1 ${esc(info.sing)}</div>
     ${s ? `<div class="qn">con ${s.name}</div>`
       : enFest ? `<div class="qn">entre conciertos</div>`
       : `<div class="qn">ensayo</div>`}`;
@@ -1077,10 +1129,10 @@ function pintarContador() {
     const info = infoTipo(tp);
     const n = e.porTipo[tp] || 0;
     html += `
-      <button class="bot-sus" style="--h:${info.hue}" onclick="apuntar('${tp.replace(/'/g, "\\'")}')">
+      <button class="bot-sus" style="--h:${info.hue}" onclick="apuntar(${escJs(tp)})">
         <span class="bs-ic">${htmlIcono(info)}</span>
         <span class="bs-n">${n}</span>
-        <span class="bs-lbl">${info.nombre}</span>
+        <span class="bs-lbl">${esc(info.nombre)}</span>
         <span class="bs-mas">+1</span>
       </button>`;
   });
@@ -1172,7 +1224,7 @@ window.abrirSustancias = function () {
     <p class="hint" style="margin-bottom:16px">Se añade un botón nuevo al contador. Lo que escribas se queda en tu móvil.</p>
     <div class="chips-sus">
       ${SUGERENCIAS.filter(s => !yaEstan.has(s.toLowerCase()))
-        .map(s => `<button class="chip-sus" onclick="nuevaSustancia('${s}')">${s}</button>`).join('')}
+        .map(s => `<button class="chip-sus" onclick="nuevaSustancia(${escJs(s)})">${esc(s)}</button>`).join('')}
     </div>
     <input type="text" id="in-sus" placeholder="o escríbela tú…" maxlength="18" autocomplete="off">
     <button class="btn-linea" onclick="nuevaSustancia(document.getElementById('in-sus').value)">AÑADIR</button>
@@ -1180,8 +1232,8 @@ window.abrirSustancias = function () {
       <div class="eyebrow" style="margin:22px 0 10px">LAS TUYAS</div>
       ${estado.otras.map(s => `
         <div class="sus-fila">
-          <span>${s}</span>
-          <button onclick="quitarSustancia('${s.replace(/'/g, "\\'")}')">quitar</button>
+          <span>${esc(s)}</span>
+          <button onclick="quitarSustancia(${escJs(s)})">quitar</button>
         </div>`).join('')}` : ''}
   `;
   h.classList.add('on');
@@ -1232,7 +1284,7 @@ function construirWrapped() {
     numero: e.total,
     grande: 'SUSTANCIAS',
     lista: Object.entries(e.porTipo).sort((a, b) => b[1] - a[1])
-      .map(([t, n]) => `${htmlIcono(infoTipo(t))} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
+      .map(([t, n]) => `${htmlIcono(infoTipo(t))} ${n} ${esc(infoTipo(t).nombre.toLowerCase())}`),
   });
 
   if (e.cada) {
@@ -1254,7 +1306,7 @@ function construirWrapped() {
       grande: x.set.name,
       numero: x.n,
       pie: `${x.n} sustancias en ${x.set.mins} minutos · ${x.set.stageName} · ${x.set.dayLabel}`,
-      lista: Object.entries(x.tipos).map(([t, n]) => `${htmlIcono(infoTipo(t))} ${n} ${infoTipo(t).nombre.toLowerCase()}`),
+      lista: Object.entries(x.tipos).map(([t, n]) => `${htmlIcono(infoTipo(t))} ${n} ${esc(infoTipo(t).nombre.toLowerCase())}`),
       set: x.set,
     });
   }
@@ -1592,9 +1644,19 @@ async function mostrarVersion() {
   const partes = [`${SETS.length} sets · ${Object.keys(window.FOTOS || {}).length} fotos`];
   try {
     const ks = await caches.keys();
-    const mia = ks.find(k => k.startsWith('riverlapp-'));
-    partes.push(mia ? `caché ${mia}` : 'sin caché (no funcionará sin cobertura)');
-    if (ks.length > 1) partes.push('⚠ hay más de una caché');
+    /* Desde que las fotos van en caché aparte SIEMPRE hay dos, así que avisar
+       por tener más de una era una falsa alarma permanente. Lo que delata de
+       verdad una actualización a medias es tener dos cachés de CÓDIGO. */
+    const codigo = ks.filter(k => /^riverlapp-v/.test(k));
+    partes.push(codigo.length ? `caché ${codigo.join(' + ')}` : 'sin caché (no funcionará sin cobertura)');
+    if (codigo.length > 1) partes.push('⚠ dos versiones a la vez');
+    if (ks.includes('riverlapp-fotos')) {
+      // la caché de fotos lleva dentro la marca __rev, que no es una foto
+      const n = (await (await caches.open('riverlapp-fotos')).keys()).length;
+      partes.push(`${Math.max(0, n - 1)} fotos guardadas`);
+    } else if (codigo.length) {
+      partes.push('⚠ sin fotos guardadas');
+    }
   } catch (_) {
     partes.push('sin service worker');
   }

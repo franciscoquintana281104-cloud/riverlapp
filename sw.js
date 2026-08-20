@@ -7,7 +7,7 @@
    enterarte. Ahora el código pesa ~700 KB y entra a la primera; las fotos se
    quedan donde están y solo se rehacen si sube FOTOS_REV. */
 
-const CACHE = 'riverlapp-v27';
+const CACHE = 'riverlapp-v28';
 const CACHE_FOTOS = 'riverlapp-fotos';
 /* Súbelo SOLO cuando cambien las fotos de artistas/: obliga a rehacerlas. */
 const FOTOS_REV = 2;

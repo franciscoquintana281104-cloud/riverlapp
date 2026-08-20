@@ -89,6 +89,25 @@ Por lo mismo, el `fetch` es **solo caché, sin refrescar por detrás**: refresca
 fichero a fichero dejaba mezclas de versiones (index.html nuevo con app.js
 viejo, que rompe la app).
 
+### El anillo se ancla a la apertura del día, no al reloj
+En una pausa el arco mide `restante / total`, y `total` se contaba desde el
+final de lo anterior. Cuando **todavía no había empezado nada de tu plan** no
+había nada anterior, así que se contaba desde `t`: como `t` avanza con el
+reloj, `restante` y `total` salían idénticos y **el arco se quedaba clavado al
+100%** hasta que empezaba tu primer concierto. En el viernes eso son casi tres
+horas de anillo cerrado con la cuenta atrás bajando al lado. Ahora se ancla a
+`aperturaDe(t)`, la hora del primer set de la jornada en curso.
+
+### Sin nada por delante hay una fase propia, `libre`
+Si no queda nada en tu plan —no has fichado, o ya has visto lo último de la
+noche— no hay cuenta atrás posible. Antes caía en la rama de pausa con
+`restante: 0` y `total: 1`: salía **un 00:00 clavado, el anillo vacío y la
+palabra "Descanso"**, que parecía la app colgada. Pasa cada noche en cuanto
+termina tu último fichaje. Ahora `medidaAhora` devuelve `fase: 'libre'`, AHORA
+pinta un titular sin anillo y **manda lo único que sirve a esa hora: qué está
+sonando** y a qué hora sigue el cartel. `latido()` se salta esa fase, que no
+tiene números que refrescar.
+
 ### AHORA se repinta entero solo cuando cambia algo de fondo
 `latido()` corre cada segundo y **solo reescribe números**. `claveAhora()` decide
 si hace falta repintar de verdad (empieza otro concierto, salta el aviso de SAL
@@ -114,6 +133,13 @@ Fran descartó explícitamente la opción clara por ser una linterna a las 4am.
 
 **No poner estilos de color en línea dentro del JS**: se saltan la hoja de
 estilos y ya hubo que limpiarlos una vez al cambiar de estética.
+
+### El nombre de las sustancias lo escribe Fran, así que va escapado
+Las sustancias que añade él se metían crudas en `onclick="apuntar('…')"`. Una
+comilla doble **partía el atributo y el botón dejaba de responder al toque**,
+sin decir nada; un `<` colaba HTML en la etiqueta. Van con `esc()` para texto y
+`escJs()` para meterlas dentro de un `onclick` sin poder romperlo. Aplica al
+botón, a la hoja de "las tuyas", al destello y a las listas del wrapped.
 
 ### Lo de las drogas se pidió quitar y luego volvió como contador
 Se esbozó una función de reducción de daños, Fran pidió quitarla, y de aquello
@@ -203,6 +229,20 @@ wrapped entero, las 16 combinaciones de transición y los cinco gestos de
 arrastre. Comprobar siempre que quede **una sola vista activa** y **ningún
 z-index sin limpiar**.
 
+La línea de versión de ⚙ dice cuántas fotos hay guardadas y **solo avisa si hay
+dos cachés de CÓDIGO**. Avisar por tener más de una caché a secas era una falsa
+alarma permanente desde que las fotos van aparte: siempre hay dos.
+
 Ojo al depurar en un panel de navegador oculto: `requestAnimationFrame` no
 dispara y `visibilityState` es `hidden`, así que el latido se para y las
-transiciones se aceleran. No es un fallo de la app.
+transiciones se aceleran. No es un fallo de la app. Peor aún, **los `setTimeout`
+se estrangulan a uno por minuto**: una batería con `await` de por medio se
+queda colgada. Para medir gestos hay que esperar con un bucle síncrono sobre
+`performance.now()`, y las transiciones se comprueban en dos mitades (en vuelo,
+y luego por el camino inmediato de `irA(v, true)`, que limpia igual que el
+temporizador de 440 ms).
+
+El caché del navegador también engaña en desarrollo: `python3 -m http.server` no
+manda `no-cache` y Chrome se queda con el `app.js` viejo aunque recargues. Si
+los cambios no aparecen, abrir por `127.0.0.1` en vez de `localhost` (otro
+origen, otra caché).
